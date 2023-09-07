@@ -133,7 +133,7 @@ class DoubanMovie:
                     uri = None
                 movie_url_list = html.xpath('//li[@class="title"]/a/@href')
                 add_date_list = html.xpath('//li/span[@class="date"]/text()')
-                movie_list_a = html.xpath('//div[@class="item"]/div[@class="info"]/ul/li[@class="title"]/a/em/text()')
+                movie_list_a = html.xpath('//li[@class="title"]/a/em/text()')
                 for i in range(len(movie_list_a)):
                     add_date = add_date_list[i]
                     days_ago = (datetime.datetime.now() - datetime.datetime.strptime(add_date, "%Y-%m-%d")).days
