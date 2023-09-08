@@ -12,6 +12,8 @@ class RequestUtils:
 
     def __init__(self, request_interval_mode=False):
         self.request_interval_mode = request_interval_mode
+        self.session = requests.Session()
+        self.maxAttempt = 6
 
     def check_request(self):
         if not self.request_interval_mode:
@@ -40,41 +42,41 @@ class RequestUtils:
 
     def post(self, url, params, headers={}):
         i = 0
-        while i < 3:
+        while i < self.maxAttempt:
             try:
                 self.check_request()
-                r = requests.post(url, data=params,
+                r = self.session.post(url, data=params,
                                   verify=False, headers=headers)
                 return str(r.content, 'UTF-8')
-            except requests.exceptions.RequestException:
+            except self.session.exceptions.RequestException:
                 i += 1
 
     def get(self, url, params=None, headers=None):
         i = 0
-        while i < 3:
+        while i < self.maxAttempt:
             try:
                 self.check_request()
-                r = requests.get(url, verify=False, headers=headers, params=params)
+                r = self.session.get(url, verify=False, headers=headers, params=params)
                 return str(r.content, 'UTF-8')
             except requests.exceptions.RequestException:
                 i += 1
 
-    def get_res(self, url, params=None, headers={}, cookies=None):
+    def get_res(self, url, params=None, headers={}):
         i = 0
-        while i < 3:
+        while i < self.maxAttempt:
             try:
                 self.check_request()
-                return requests.get(url, params=params, verify=False, headers=headers, cookies=cookies)
+                return self.session.get(url, params=params, verify=False, headers=headers)
             except requests.exceptions.RequestException as e:
                 print(e)
                 i += 1
 
-    def post_res(self, url, params=None, headers={}, cookies=None, allow_redirects=True):
+    def post_res(self, url, params=None, headers={}, allow_redirects=True):
         i = 0
-        while i < 3:
+        while i < self.maxAttempt:
             try:
                 self.check_request()
-                return requests.post(url, params=params, verify=False, headers=headers, cookies=cookies,
+                return self.session.post(url, params=params, verify=False, headers=headers,
                                      allow_redirects=allow_redirects)
             except requests.exceptions.RequestException as e:
                 print(e)

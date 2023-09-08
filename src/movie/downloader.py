@@ -1,5 +1,5 @@
 
-from src.movie.douban import DoubanMovie
+from src.movie.douban import DoubanMovieCrawler
 from src.radarr.utils import Radarr
 from src.sonarr.utils import Sonarr
 from src.utils.movie_utils import format_serial_name
@@ -9,7 +9,7 @@ class Downloader:
     def __init__(self, **kwargs):
         self.workdir = kwargs['workdir']
         self.douban_config = kwargs['douban']
-        self.douban = DoubanMovie()
+        self.doubanMovieCrawler = DoubanMovieCrawler(self.douban_config['cookies'])
         self.radarr= Radarr(
             host=kwargs['radarr']['host'],
             port=kwargs['radarr']['port'],
@@ -48,14 +48,15 @@ class Downloader:
 
 
     def search_and_download(self, douban_user, types=['wish'], within_days=365, turn_page=True):
-        movie_list = self.douban.get_user_movie_list(douban_user, types=types, within_days=within_days,
+        movie_list = self.doubanMovieCrawler.get_user_movie_list(douban_user, types=types, within_days=within_days,
                                                      turn_page=turn_page)
         if movie_list is None:
             print('%s没有任何影视资源需要下载' % douban_user)
             return None
         print('已经获得%s的全部影视，共有%s个需要智能检索' % (douban_user, len(movie_list)))
+   
         for douban_list_item in movie_list:
-            movie_detail = self.douban.get_movie_by_id(douban_list_item['id'])
+            movie_detail = self.doubanMovieCrawler.get_movie_by_id(douban_list_item['id'])
             if movie_detail is None:
                 print('%s(id:%s)信息获取异常' % (douban_list_item['name'], douban_list_item['id']))
                 continue

@@ -8,23 +8,19 @@ from lxml import etree
 from src.utils.http_utils import RequestUtils
 
 
-class DoubanMovie:
-    __headers = {
-        'Referer': 'https://movie.douban.com/',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36'
-    }
+class DoubanMovieCrawler:
 
-    def __init__(self):
-        self.cookies = None
+    def __init__(self, cookies):
+        self.__headers =  {
+            'Referer': 'https://movie.douban.com/',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36'
+        }
         self.req = RequestUtils(request_interval_mode=True)
         # 先访问一次首页，显得像个正常人
-        res = self.req.get_res('https://movie.douban.com/', headers=self.__headers)
-        self.__set_cookies(res)
-
-    def __set_cookies(self, res):
-        if self.cookies is None:
-            self.cookies = res.cookies
-
+        initialHeaders = self.__headers
+        initialHeaders['Cookies'] = cookies
+        res = self.req.get_res('https://movie.douban.com/', headers=initialHeaders)
+    
     def get_movie_by_id(self, id):
         return self.get_movie_detail('https://movie.douban.com/subject/%s' % id)
 
@@ -35,8 +31,10 @@ class DoubanMovie:
             return cn2an.cn2an(str)
 
     def get_movie_detail(self, url):
-        res = self.req.get_res(url, headers=self.__headers, cookies=self.cookies)
-        self.__set_cookies(res)
+        res = self.req.get_res(url, headers=self.__headers)
+        if res == None:
+            print('Bad result returned')
+            return None
         text = res.text
         if text.find('有异常请求从你的 IP 发出') != -1:
             print('被豆瓣识别到抓取行为了，请更换IP后才能使用')
@@ -119,8 +117,7 @@ class DoubanMovie:
             result = []
             while uri is not None:
                 url = 'https://movie.douban.com' + uri
-                res = self.req.get_res(url, headers=self.__headers, cookies=self.cookies)
-                self.__set_cookies(res)
+                res = self.req.get_res(url, headers=self.__headers)
                 text = res.text
                 if text.find('有异常请求从你的 IP 发出') != -1:
                     print('被豆瓣识别到抓取行为了，请更换IP后才能使用')

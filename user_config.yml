@@ -1,4 +1,5 @@
 douban:
+  cookies: ''
   #是否自动翻页，豆瓣的电影页面是分页的方式，开启此配置将自动点击下一页读取更多电影信息，推荐开启；
   turn_page: true
   #wish为想看、do为在看、collect为看过，多个支持;号隔开 示范：wish;do

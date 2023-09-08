@@ -19,6 +19,7 @@ def build_downloader(user_config, workdir):
     params = {
         'workdir': workdir,
         'douban': {
+            'cookies': user_config['douban']['cookies'],
             'user_domain': user_config['douban']['user_domain'].split(';'),
             'within_days': user_config['douban']['within_days'],
             'turn_page': user_config['douban']['turn_page'],
