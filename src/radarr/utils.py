@@ -6,7 +6,7 @@ from src.utils.http_utils import RequestUtils
 
 class Radarr:
   def __init__(self, host=None, port=None, api_key=None, is_https=False, rootFolderPath="/media/电影",qualityProfileId=1, addOptions ={},minimumAvailability= '', monitored= ''  ):
-      self.req = RequestUtils(request_interval_mode=True)
+      self.req = RequestUtils(request_interval_mode=True, max_attempt=6, min_request_interval_in_ms=200, max_request_interval_in_ms=500, min_sleep_secs=0.1, max_sleep_secs=0.2)
       self.host = host
       self.port = port
       self.rootFolderPath = rootFolderPath

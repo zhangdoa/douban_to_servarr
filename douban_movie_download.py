@@ -7,6 +7,15 @@ import yaml
 
 user_setting_name = 'user_config.yml'
 
+class Logger(object):
+    def __init__(self):
+        self.terminal = sys.stdout
+        file_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.log = open("%s.log" % (file_name), "a", encoding="UTF-8")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)  
 
 def load_user_config(workdir):
     user_setting_filepath = workdir + os.sep + user_setting_name
@@ -23,6 +32,8 @@ def build_downloader(user_config, workdir):
         to_date = user_config['douban']['to_date']
         if from_date == 'today':
             from_date = datetime.date.today()
+        if to_date == 'epoch':
+            to_date = datetime.date(1970, 1, 1)
         within_days = (from_date - to_date).days
 
     saved_fetched_list = ''
@@ -77,6 +88,7 @@ def build_downloader(user_config, workdir):
 if __name__ == '__main__':
      # 运行在docker上的时候，workdir = '/data',记得修改, 本地运行 workdir = os.getcwd()
     workdir = os.getcwd()
+    sys.stdout = Logger()
     if not os.path.exists(workdir):
         print('请提供正确的配置，工作目录不存在：%s' % workdir)
         sys.exit()

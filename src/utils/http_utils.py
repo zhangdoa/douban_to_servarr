@@ -8,41 +8,36 @@ import urllib3
 
 class RequestUtils:
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    __pre_request_time = None
+    __last_request_time = None
 
-    def __init__(self, request_interval_mode=False):
+    def __init__(self, request_interval_mode=False, max_attempt=6, min_request_interval_in_ms=1000, max_request_interval_in_ms=5000, min_sleep_secs= 1.0, max_sleep_secs=10.0):
         self.request_interval_mode = request_interval_mode
         self.session = requests.Session()
-        self.maxAttempt = 6
-
+        self.max_attempt = max_attempt
+        self.min_request_interval_in_ms = min_request_interval_in_ms
+        self.max_request_interval_in_ms = max_request_interval_in_ms
+        self.min_sleep_secs = min_sleep_secs
+        self.max_sleep_secs = max_sleep_secs
     def check_request(self):
         if not self.request_interval_mode:
             return
-        """
-        todo 对不同domain做不同配置
-        检测每次请求的间隔，如果频率太快则休息，休息时间尽量无规律
-        :return:
-        """
-        if self.__pre_request_time is None:
-            self.__pre_request_time = datetime.datetime.now()
+        if self.__last_request_time is None:
+            self.__last_request_time = datetime.datetime.now()
             return
-        during_time = datetime.datetime.now() - self.__pre_request_time
-        ms = during_time.microseconds / 1000
-        # 至少间隔1秒，随机是为了无规律
-        if ms < random.randint(1000, 5000):
-            min_sleep_secs = 1
-            # 随机休眠0.5-5秒，扣除间隔影响，避免休眠太久
-            max_sleep_secs = 10.0 - (ms / 1000)
-            # 避免间隔太久随机出错
+        time_since_last_request = datetime.datetime.now() - self.__last_request_time
+        time_since_last_request_ms = time_since_last_request.microseconds / 1000
+        if time_since_last_request_ms < random.randint(self.min_request_interval_in_ms, self.max_request_interval_in_ms):
+            min_sleep_secs = self.min_sleep_secs
+            max_sleep_secs = self.max_sleep_secs - (time_since_last_request_ms / 1000)
             if max_sleep_secs <= min_sleep_secs:
                 max_sleep_secs = min_sleep_secs * 2
-            sleep_secs = random.uniform(min_sleep_secs, max_sleep_secs)
+            sleep_secs = random.uniform(self.min_sleep_secs, self.max_sleep_secs)
             time.sleep(sleep_secs)
-        self.__pre_request_time = datetime.datetime.now()
+        self.__last_request_time = datetime.datetime.now()
 
     def post(self, url, params, headers={}):
         i = 0
-        while i < self.maxAttempt:
+        while i < self.max_attempt:
             try:
                 self.check_request()
                 r = self.session.post(url, data=params,
@@ -53,7 +48,7 @@ class RequestUtils:
 
     def get(self, url, params=None, headers=None):
         i = 0
-        while i < self.maxAttempt:
+        while i < self.max_attempt:
             try:
                 self.check_request()
                 r = self.session.get(url, verify=False, headers=headers, params=params)
@@ -63,7 +58,7 @@ class RequestUtils:
 
     def get_res(self, url, params=None, headers={}):
         i = 0
-        while i < self.maxAttempt:
+        while i < self.max_attempt:
             try:
                 self.check_request()
                 return self.session.get(url, params=params, verify=False, headers=headers)
@@ -73,7 +68,7 @@ class RequestUtils:
 
     def post_res(self, url, params=None, headers={}, allow_redirects=True):
         i = 0
-        while i < self.maxAttempt:
+        while i < self.max_attempt:
             try:
                 self.check_request()
                 return self.session.post(url, params=params, verify=False, headers=headers,
