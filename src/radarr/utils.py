@@ -48,7 +48,7 @@ class Radarr:
     params['minimumAvailability'] = self.minimumAvailability
     r = self.req.post(self.server + api, params=json.dumps(params), headers=self.headers)
     r = json.loads(r)
-    if 'title' in r and r['title'] == movie_info['title']:
+    if 'title' in r and r['title'] == movie_info['title'] or r['originalTitle'] == movie_info['originalTitle']:
       print('%s 添加成功' %(movie_info['title']))
     else:
       print('%s 添加失败' %(movie_info['title']))

@@ -16,14 +16,34 @@ def load_user_config(workdir):
 
 
 def build_downloader(user_config, workdir):
+    if user_config['douban'].get('within_days'):
+        within_days = user_config['douban']['within_days']
+    else:
+        from_date = user_config['douban']['from_date']
+        to_date = user_config['douban']['to_date']
+        if from_date == 'today':
+            from_date = datetime.date.today()
+        within_days = (from_date - to_date).days
+
+    saved_fetched_list = ''
+    mode = user_config['douban']['mode']
+    if mode == 'add_from_file':
+        saved_fetched_list = user_config['douban']['saved_fetched_list']
+        if not saved_fetched_list or saved_fetched_list == '':
+            print("%s mode is specified by the saved fetched list is not set" % (mode))
+            return
+        
     params = {
         'workdir': workdir,
         'douban': {
             'cookies': user_config['douban']['cookies'],
             'user_domain': user_config['douban']['user_domain'].split(';'),
-            'within_days': user_config['douban']['within_days'],
+            'within_days': within_days,
             'turn_page': user_config['douban']['turn_page'],
-            'types': user_config['douban']['types'].split(';')
+            'types': user_config['douban']['types'].split(';'),
+            'save_fetched_list': user_config['douban']['save_fetched_list'],
+            'mode' : user_config['douban']['mode'],
+            'saved_fetched_list': saved_fetched_list
         },
         'radarr' : {
             'host': user_config['radarr']['host'],
@@ -62,5 +82,7 @@ if __name__ == '__main__':
         sys.exit()
     config = load_user_config(workdir)
     downloader = build_downloader(config, workdir)
-    print('开始寻找电影并自动找种下载，现在时间是 %s' % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    downloader.start()
+    if downloader:
+        downloader.start()
+    else:
+        print('Something isn\'t correct, please check the console output for the details')

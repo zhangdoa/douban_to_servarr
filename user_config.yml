@@ -8,6 +8,12 @@ douban:
   user_domain: xxxxxx;
   #你加入想看的电影一定是有添加时间的，这个就是取多少天内的电影；如果你曾经在想看点了很多不想看的电影，用这个配置，一定程度上可以过滤掉无效被你遗忘的信息；
   within_days: 365
+  #within_days: 365
+  from_date: 'today'
+  to_date: 2017-01-01 #YYYY-MM-DD
+  save_fetched_list: true
+  mode: 'fetch_only' #fetch_only, add_from_file, fetch_and_add
+  saved_fetched_list: '.json' #20230101_010101_fetched_list.json, for example
 radarr:
   host: xxxx 
   port: xxx
