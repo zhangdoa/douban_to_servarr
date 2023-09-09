@@ -56,12 +56,13 @@ class Sonarr:
       elif 'title' in r:
         print('%s 添加成功' %(r['title']))
         
-      
-
   def search_not_exist_serial(self, search_key):
     api = '/api/v3/series/lookup'
     r = self.req.get(self.server + api, params={'term' :search_key }, headers=self.headers)
-    return json.loads(r)
+    if r is not None:
+      return json.loads(r)
+    else:
+      return None
 
   def search_not_exist_serial_and_download(self, douban_serial_detail, format_all_name, original_all_name):
     search_name = douban_serial_detail['name']
@@ -77,13 +78,15 @@ class Sonarr:
             self.download_serial(result, douban_serial_detail)
             found = True
             break
+      else:
+        print('%s 添加失败' %(name))
       if (idx >= len(format_all_name) ):
         print('%s 添加失败' %(search_name))
 
   def exist_serial(self, imdbId, original_all_name):
     local_serial_list = self.search_all_local_serial()
-    local_serial_list = json.loads(local_serial_list)
     if local_serial_list is not None:
+      local_serial_list = json.loads(local_serial_list)
       for serial in local_serial_list:
         if ('imdbId' in serial and serial['imdbId'] == imdbId) or ('cleanTitle' in serial and serial_name_match(serial['cleanTitle'], original_all_name) or ('title' in serial and serial['title'] in original_all_name) ) :
          return True

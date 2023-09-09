@@ -23,7 +23,10 @@ class Radarr:
   def search_all_local_movie(self):
     api = '/api/v3/movie'
     r = self.req.get(self.server + api, headers=self.headers)
-    return json.loads(r)
+    if r is not None:
+      return json.loads(r)
+    else:
+      return None
 
   def exist_movie(self, imdbId):
     allMovieList = self.search_all_local_movie()
@@ -36,7 +39,10 @@ class Radarr:
   def search_not_exist_movie(self, search_name):
     api = '/api/v3/movie/lookup'
     r = self.req.get(self.server + api, params={'term' :search_name }, headers=self.headers)
-    return json.loads(r)
+    if r is not None:
+      return json.loads(r)
+    else:
+      return None
 
   def download_movie(self, movie_info):
     api = '/api/v3/movie'
@@ -60,7 +66,7 @@ class Radarr:
         raise Exception('请求异常')
     except Exception as e:
       search_result_list = self.search_not_exist_movie(search_name)
-    if search_result_list  is not None and len(search_result_list) > 0:
+    if search_result_list is not None and len(search_result_list) > 0:
       for idx,result in enumerate(search_result_list):
         if 'imdbId' in result and result['imdbId'] == imdbId:
           self.download_movie(result)
@@ -69,5 +75,3 @@ class Radarr:
           print('%s 添加失败' %(search_name))
     else:
       print('%s 没有找到资源' %(search_name))
-
-  
