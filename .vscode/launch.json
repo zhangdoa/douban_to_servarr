@@ -8,7 +8,7 @@
             "name": "Launch",
             "type": "python",
             "request": "launch",
-            "program": "douban_movie_download.py",
+            "program": "src/__main__.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }

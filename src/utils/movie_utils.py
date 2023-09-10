@@ -1,6 +1,6 @@
 import re
 import cn2an
-from src.utils import number_utils
+from utils import number_utils
 
 __num_pattern = '[1234567890一二三四五六七八九十]+'
 __episode_patterns = [

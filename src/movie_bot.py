@@ -1,10 +1,10 @@
 import datetime
 import json
 from loguru import logger
-from src.movie.douban import DoubanMovieCrawler
-from src.radarr.utils import Radarr
-from src.sonarr.utils import Sonarr
-from src.utils.movie_utils import format_series_title
+from douban.douban import DoubanMovieCrawler
+from radarr.radarr import Radarr
+from sonarr.sonarr import Sonarr
+from utils.movie_utils import format_series_title
 
 
 class MovieBot:

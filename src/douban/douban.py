@@ -6,7 +6,7 @@ import cn2an
 from lxml import etree
 from loguru import logger
 
-from src.utils.http_utils import RequestUtils
+from utils.http_utils import RequestUtils
 
 
 class DoubanMovieCrawler:

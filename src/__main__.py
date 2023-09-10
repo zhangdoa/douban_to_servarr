@@ -4,13 +4,16 @@ import argparse
 import datetime
 import yaml
 from loguru import logger
-from src.movie.downloader import MovieBot
+from movie_bot import MovieBot
 
 user_setting_name = 'user_config.yml'
 
 def load_user_config(workdir):
-    user_setting_filepath = workdir + os.sep + user_setting_name
-    with open(user_setting_filepath, 'r', encoding='utf-8') as file:
+    user_config_file_path = workdir + os.sep + user_setting_name
+    if not os.path.exists(user_config_file_path):
+        logger.warning("File user_config.xml doesn't exist. Please create one from user_config_template.xml.")
+        return None
+    with open(user_config_file_path, 'r', encoding='utf-8') as file:
         user_config = yaml.safe_load(file)
     return user_config
 
@@ -85,12 +88,12 @@ if __name__ == '__main__':
         logger.error('请提供正确的配置，工作目录不存在：{}' ,workdir)
         sys.exit()
     user_config = load_user_config(workdir)
+    if user_config:
+        logger.add(sys.stdout, format="{time} {level} {message}", filter="my_module", level=user_config['global']['log_level'])
+        logger.add("movie_robot_{time}.log")
 
-    logger.add(sys.stdout, format="{time} {level} {message}", filter="my_module", level=user_config['global']['log_level'])
-    logger.add("movie_robot_{time}.log")
-
-    movie_bot = create_movie_bot(user_config, workdir)
-    if movie_bot:
-        movie_bot.start()
-    else:
-        logger.error('Something isn\'t correct, please check the console output for the details')
+        movie_bot = create_movie_bot(user_config, workdir)
+        if movie_bot:
+            movie_bot.start()
+        else:
+            logger.error('Something isn\'t correct, please check the console output for the details')

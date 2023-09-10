@@ -2,7 +2,7 @@ import json
 
 from loguru import logger
 
-from src.utils.http_utils import RequestUtils
+from utils.http_utils import RequestUtils
 
 class Radarr:
   def __init__(self, host=None, port=None, url_base=None, api_key=None, is_https=False, rootFolderPath="/media/电影",qualityProfileId=1, addOptions ={},minimumAvailability= '', monitored= ''  ):
