@@ -69,15 +69,15 @@ class MovieBot:
             logger.info('已经获得{}的全部影视，共有{}个需要检索', douban_user, len(user_movie_list))
 
             for user_movie in user_movie_list:
-                movie_details = self.douban_movie_crawler.get_movie_details_by_id(user_movie['id'])
+                movie_details = self.douban_movie_crawler.get_movie_details_by_id(user_movie['imdb_id'])
                 if movie_details is None:
-                    logger.warning('信息获取异常: {}(id: {})', user_movie['title'], user_movie['id'])
+                    logger.warning('信息获取异常: {}(imdb_id: {})', user_movie['title'], user_movie['imdb_id'])
                     continue
-                logger.info('The details of {}(id:{}) has been fetched', user_movie['title'], user_movie['id'])
+                logger.info('The details of 《{}》 (original_title: {}, imdb_id: {}) has been fetched', user_movie['title'], user_movie['original_title'], user_movie['imdb_id'])
                 movie_details_list.append(movie_details)
 
         if mode != 'add_from_file' and save_fetched_list:
-            file_name = datetime.datetime.now().strftime("%Y%m%d_%H%M{}") + '_fetched_list.json'
+            file_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + '_fetched_list.json'
             logger.info('Saving the fetched list to {}', file_name)
             with open(file_name, 'w', encoding='utf-8') as fetched_list_file:
                 json_obj = json.dumps(movie_details_list, indent = 4, sort_keys = True)

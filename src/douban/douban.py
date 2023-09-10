@@ -14,7 +14,7 @@ class DoubanMovieCrawler:
     def __init__(self, cookies):
         self.__headers =  {
             'Referer': 'https://movie.douban.com/',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36'
         }
         self.req = RequestUtils(request_interval_mode=True)
         # 先访问一次首页，显得像个正常人
@@ -29,10 +29,10 @@ class DoubanMovieCrawler:
             return cn2an.cn2an(str)
 
     def request_get(self, url, headers):
-        res = self.req.get(url, headers)
+        res = self.req.get(url=url, headers=headers)
         if res == None:
             logger.error('Bad result returned when requesting {}', url)
-            return None        
+            return None  
         text = res.text
         if text.find('有异常请求从你的 IP 发出') != -1:
             logger.warning('The crawler is detected, please try again with a different IP')
@@ -44,6 +44,7 @@ class DoubanMovieCrawler:
         if res == None:
             return None
         
+        text = res.text
         # mandatory fields
         found_titles = re.findall('<span property="v:itemreviewed">(.+)</span>', text)
         if len(found_titles) > 0:
@@ -123,7 +124,7 @@ class DoubanMovieCrawler:
                 'episodes': episodes}
         
     def get_movie_details_by_id(self, id):
-        return self.get_movie_details('https://movie.douban.com/subject/{}' ,id)
+        return self.get_movie_details('https://movie.douban.com/subject/%s' % id)
     
     def get_user_movie_list(self, user, types=['wish'], within_days=365, turn_page=True) -> object:
         """

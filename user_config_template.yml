@@ -59,8 +59,8 @@ sonarr:
   addOptions : {monitor: "all", searchForCutoffUnmetEpisodes: true, searchForMissingEpisodes: true}
   # 这是为了根据不同类型的资源设置，不同的下载路径和剧集类型，这样就不必将所有资源放在一个目录了
   genreMappingPath: [
-    { genre: ["电视剧","剧情"], rootFolderPath: '/media/电视剧', seriesType: 'Standard' },
-    { genre: ["动漫", "动画"], rootFolderPath: '/media/动漫', seriesType: 'Anime'},
-    { genre: ["纪录片"], rootFolderPath: '/media/纪录片', seriesType: 'Standard'},
-    { genre: ["综艺", "真人秀"], rootFolderPath: '/media/综艺', seriesType: 'Daily'}
+    { genre: ["电视剧","剧情"], rootFolderPath: '/media/series', seriesType: 'Standard' },
+    { genre: ["动漫", "动画"], rootFolderPath: '/media/anime', seriesType: 'Anime'},
+    { genre: ["纪录片"], rootFolderPath: '/media/documentaries', seriesType: 'Standard'},
+    { genre: ["综艺", "真人秀"], rootFolderPath: '/media/shows', seriesType: 'Daily'}
   ]
