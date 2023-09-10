@@ -1,14 +1,15 @@
 import json
-from urllib import error
 
-from numpy import true_divide
+from loguru import logger
+
 from src.utils.http_utils import RequestUtils
 
 class Radarr:
-  def __init__(self, host=None, port=None, api_key=None, is_https=False, rootFolderPath="/media/电影",qualityProfileId=1, addOptions ={},minimumAvailability= '', monitored= ''  ):
+  def __init__(self, host=None, port=None, url_base=None, api_key=None, is_https=False, rootFolderPath="/media/电影",qualityProfileId=1, addOptions ={},minimumAvailability= '', monitored= ''  ):
       self.req = RequestUtils(request_interval_mode=True, max_attempt=6, min_request_interval_in_ms=200, max_request_interval_in_ms=500, min_sleep_secs=0.1, max_sleep_secs=0.2)
       self.host = host
       self.port = port
+      self.url_base = url_base
       self.rootFolderPath = rootFolderPath
       self.qualityProfileId = qualityProfileId
       self.addOptions = addOptions
@@ -18,33 +19,34 @@ class Radarr:
         'X-Api-Key': api_key,
         'Content-Type': 'application/json'
       }
-      self.server = '%s://%s:%s' % ("https" if is_https else "http", host, port)
+      self.server = '%s://%s%s%s' % ("https" if is_https else "http", host, ":" if url_base == "" else "", port if url_base == "" else url_base)
+      self.added_movies = self.get_added_movies()
 
-  def search_all_local_movie(self):
+  def get_added_movies(self):
     api = '/api/v3/movie'
-    r = self.req.get(self.server + api, headers=self.headers)
+    r = self.req.get_and_return_content(self.server + api, headers=self.headers)
     if r is not None:
       return json.loads(r)
     else:
+      logger.warning("Trying to get the added movies but the result is none")
       return None
 
-  def exist_movie(self, imdbId):
-    allMovieList = self.search_all_local_movie()
-    if allMovieList is not None:
-      for movie in allMovieList:
-        if ('imdbId' in movie and movie['imdbId'] == imdbId):
+  def does_movie_exist(self, imdb_id):
+    if self.added_movies is not None:
+      for movie in self.added_movies:
+        if ('imdbId' in movie and movie['imdbId'] == imdb_id):
           return True
     return False
 
-  def search_not_exist_movie(self, search_name):
+  def search_movie(self, title):
     api = '/api/v3/movie/lookup'
-    r = self.req.get(self.server + api, params={'term' :search_name }, headers=self.headers)
+    r = self.req.get_and_return_content(self.server + api, params={'term':title}, headers=self.headers)
     if r is not None:
       return json.loads(r)
     else:
       return None
 
-  def download_movie(self, movie_info):
+  def add_movie(self, movie_info):
     api = '/api/v3/movie'
     params = movie_info
     params['qualityProfileId'] = self.qualityProfileId
@@ -52,26 +54,27 @@ class Radarr:
     params['monitored'] = self.monitored
     params['addOptions'] = self.addOptions
     params['minimumAvailability'] = self.minimumAvailability
-    r = self.req.post(self.server + api, params=json.dumps(params), headers=self.headers)
+    r = self.req.post_and_return_content(self.server + api, params=json.dumps(params), headers=self.headers)
     r = json.loads(r)
     if 'title' in r and r['title'] == movie_info['title'] or r['originalTitle'] == movie_info['originalTitle']:
-      print('%s 添加成功' %(movie_info['title']))
+      logger.info('Successfully added: {}', (movie_info['title']))
     else:
-      print('%s 添加失败' %(movie_info['title']))
-  def search_not_exist_movie_and_download(self, search_name, imdbId):
-    search_result_list = []
+      logger.error('Failed to add: {}', (movie_info['title']))
+
+  def search_movie_and_add(self, title, imdb_id):
+    found_movies = []
     try:
-      search_result_list = self.search_not_exist_movie('imdb:'+imdbId)
-      if not isinstance(search_result_list, list): 
-        raise Exception('请求异常')
-    except Exception as e:
-      search_result_list = self.search_not_exist_movie(search_name)
-    if search_result_list is not None and len(search_result_list) > 0:
-      for idx,result in enumerate(search_result_list):
-        if 'imdbId' in result and result['imdbId'] == imdbId:
-          self.download_movie(result)
+      found_movies = self.search_movie('imdb:' + imdb_id)
+      if not isinstance(found_movies, list): 
+        raise Exception('Exceptions in requests')
+    except Exception as e:    
+      found_movies = self.search_movie(title)
+    if found_movies is not None and len(found_movies) > 0:
+      for idx,result in enumerate(found_movies):
+        if 'imdbId' in result and result['imdbId'] == imdb_id:
+          self.add_movie(result)
           break
-        if idx >= len(search_result_list):
-          print('%s 添加失败' %(search_name))
+        if idx >= len(found_movies):
+          logger.error('Failed to add {}', title)
     else:
-      print('%s 没有找到资源' %(search_name))
+      logger.warning('Can\'t find movie {}', title)

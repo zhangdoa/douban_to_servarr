@@ -1,21 +1,12 @@
-import argparse
-import datetime
 import os
 import sys
-from src.movie.downloader import Downloader
+import argparse
+import datetime
 import yaml
+from loguru import logger
+from src.movie.downloader import MovieBot
 
 user_setting_name = 'user_config.yml'
-
-class Logger(object):
-    def __init__(self):
-        self.terminal = sys.stdout
-        file_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.log = open("%s.log" % (file_name), "a", encoding="UTF-8")
-
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.write(message)  
 
 def load_user_config(workdir):
     user_setting_filepath = workdir + os.sep + user_setting_name
@@ -24,10 +15,11 @@ def load_user_config(workdir):
     return user_config
 
 
-def build_downloader(user_config, workdir):
+def create_movie_bot(user_config, workdir):
+    within_days = 0
     if user_config['douban'].get('within_days'):
         within_days = user_config['douban']['within_days']
-    else:
+    if within_days == 0:
         from_date = user_config['douban']['from_date']
         to_date = user_config['douban']['to_date']
         if from_date == 'today':
@@ -41,7 +33,7 @@ def build_downloader(user_config, workdir):
     if mode == 'add_from_file':
         saved_fetched_list = user_config['douban']['saved_fetched_list']
         if not saved_fetched_list or saved_fetched_list == '':
-            print("%s mode is specified by the saved fetched list is not set" % (mode))
+            logger.error("{} mode is specified by the saved fetched list is not set", mode)
             return
         
     params = {
@@ -59,6 +51,7 @@ def build_downloader(user_config, workdir):
         'radarr' : {
             'host': user_config['radarr']['host'],
             'port': user_config['radarr']['port'],
+            'url_base': user_config['radarr']['url_base'],
             'api_key': user_config['radarr']['api_key'],
             'https': user_config['radarr']['https'],
             'rootFolderPath':  user_config['radarr']['rootFolderPath'],
@@ -79,22 +72,25 @@ def build_downloader(user_config, workdir):
             'seasonFolder' : user_config['sonarr']['seasonFolder'] ,
             'monitored': user_config['sonarr']['monitored'],
             'addOptions' : user_config['sonarr']['addOptions'],
-            'typeMappingPath': user_config['sonarr']['typeMappingPath'],
+            'genreMappingPath': user_config['sonarr']['genreMappingPath'],
         }
     }
-    return Downloader(**params)
+    return MovieBot(**params)
 
 
 if __name__ == '__main__':
      # 运行在docker上的时候，workdir = '/data',记得修改, 本地运行 workdir = os.getcwd()
-    workdir = os.getcwd()
-    sys.stdout = Logger()
+    workdir = os.getcwd()   
     if not os.path.exists(workdir):
-        print('请提供正确的配置，工作目录不存在：%s' % workdir)
+        logger.error('请提供正确的配置，工作目录不存在：{}' ,workdir)
         sys.exit()
-    config = load_user_config(workdir)
-    downloader = build_downloader(config, workdir)
-    if downloader:
-        downloader.start()
+    user_config = load_user_config(workdir)
+
+    logger.add(sys.stdout, format="{time} {level} {message}", filter="my_module", level=user_config['global']['log_level'])
+    logger.add("movie_robot_{time}.log")
+
+    movie_bot = create_movie_bot(user_config, workdir)
+    if movie_bot:
+        movie_bot.start()
     else:
-        print('Something isn\'t correct, please check the console output for the details')
+        logger.error('Something isn\'t correct, please check the console output for the details')

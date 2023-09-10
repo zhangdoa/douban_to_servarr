@@ -1,12 +1,14 @@
 
 import json
 
+from loguru import logger
+
 from src.utils.http_utils import RequestUtils
-from src.utils.movie_utils import format_serial_name
-from src.utils.movie_utils import serial_name_match
+from src.utils.movie_utils import format_series_title
+from src.utils.movie_utils import series_title_match
 
 class Sonarr:
-  def __init__(self, host=None, port=None, api_key=None, is_https=False, rootFolderPath="/media/电影",qualityProfileId=1, languageProfileId = 2, seriesType = 'Standard',seasonFolder = True, monitored = True, addOptions = {}, typeMappingPath = [] ):
+  def __init__(self, host=None, port=None, api_key=None, is_https=False, rootFolderPath="/media/电影",qualityProfileId=1, languageProfileId = 2, seriesType = 'Standard',seasonFolder = True, monitored = True, addOptions = {}, genreMappingPath = [] ):
       self.req = RequestUtils(request_interval_mode=True, max_attempt=6, min_request_interval_in_ms=200, max_request_interval_in_ms=500, min_sleep_secs=0.1, max_sleep_secs=0.2)
       self.host = host
       self.port = port
@@ -15,7 +17,7 @@ class Sonarr:
       self.languageProfileId = languageProfileId
       self.seriesType = seriesType
       self.addOptions = addOptions
-      self.typeMappingPath = typeMappingPath
+      self.genreMappingPath = genreMappingPath
       self.seasonFolder = seasonFolder
       self.monitored = monitored
       self.headers={
@@ -24,16 +26,16 @@ class Sonarr:
       }
       self.server = '%s://%s:%s' % ("https" if is_https else "http", host, port)
 
-  def search_all_local_serial(self):
+  def get_added_series(self):
     api = '/api/v3/series'
-    serial_list = self.req.get(self.server + api, headers=self.headers)
-    if serial_list is not None and len(serial_list) > 0:
-      return serial_list
+    series_list = self.req.get_and_return_content(self.server + api, headers=self.headers)
+    if series_list is not None and len(series_list) > 0:
+      return series_list
     else:
       return None
 
-  def download_serial(self, serial_info, douban_serial_detail):
-      params = serial_info
+  def add_series(self, series_info, series_details):
+      params = series_info
       params['languageProfileId'] = self.languageProfileId
       params['qualityProfileId'] = self.qualityProfileId
       params['addOptions'] = self.addOptions
@@ -41,53 +43,53 @@ class Sonarr:
       params['seriesType'] = self.seriesType
       params['seasonFolder'] = self.seasonFolder
       params['monitored'] = self.monitored
-      cate = douban_serial_detail['cate']
-      if cate is not None and len(cate) > 0:
-        for c in cate:
-          for t in self.typeMappingPath:
-            if c in t['type']:
+      genres = series_details['genres']
+      if genres is not None and len(genres) > 0:
+        for genre in genres:
+          for t in self.genreMappingPath:
+            if genre in t['genre']:
               params['rootFolderPath'] = t['rootFolderPath']
               params['seriesType'] = t['seriesType']
       api = '/api/v3/series'
-      r = self.req.post(self.server + api, params=json.dumps(params), headers=self.headers)
+      r = self.req.post_and_return_content(self.server + api, params=json.dumps(params), headers=self.headers)
       r = json.loads(r)
       if 'errorMessage' in r:
-        print('添加失败: %s' %(r['errorMessage']))
+        logger.error('Failed to add: {}', r['errorMessage'])
       elif 'title' in r:
-        print('%s 添加成功' %(r['title']))
+        logger.info('Added: {}', r['title'])
         
-  def search_not_exist_serial(self, search_key):
+  def search_series(self, search_key):
     api = '/api/v3/series/lookup'
-    r = self.req.get(self.server + api, params={'term' :search_key }, headers=self.headers)
+    r = self.req.get_and_return_content(self.server + api, params={'term' :search_key }, headers=self.headers)
     if r is not None:
       return json.loads(r)
     else:
       return None
 
-  def search_not_exist_serial_and_download(self, douban_serial_detail, format_all_name, original_all_name):
-    search_name = douban_serial_detail['name']
-    imdbId = douban_serial_detail['IMDB'].strip()
+  def search_series_and_add(self, series_details, formatted_titles, original_title):
+    original_title = series_details['original_title']
+    imdb_id = series_details['imdb_id'].strip()
     found = False
-    for idx, name in enumerate(format_all_name):
+    for idx, formatted_title in enumerate(formatted_titles):
       if found: 
         return
-      search_result_list = self.search_not_exist_serial(format_serial_name(name))
-      if (search_result_list is not None) and (len(search_result_list) > 0):
-        for result in  search_result_list:
-          if ('imdbId' in result and result['imdbId'] == imdbId) or ('cleanTitle' in result and serial_name_match(result['cleanTitle'], original_all_name)):
-            self.download_serial(result, douban_serial_detail)
+      found_series = self.search_series(format_series_title(formatted_title))
+      if (found_series is not None) and (len(found_series) > 0):
+        for series in  found_series:
+          if ('imdbId' in series and series['imdbId'] == imdb_id) or ('cleanTitle' in series and series_title_match(series['cleanTitle'], original_title)):
+            self.add_series(series, series_details)
             found = True
             break
       else:
-        print('%s 添加失败' %(name))
-      if (idx >= len(format_all_name) ):
-        print('%s 添加失败' %(search_name))
+        logger.info('Can\'t find the series with title {}', formatted_title)
+      if (idx >= len(formatted_titles) ):
+        logger.error('Failed to add：{}. There\'s no series matching the provided titles', series_details['title'])
 
-  def exist_serial(self, imdbId, original_all_name):
-    local_serial_list = self.search_all_local_serial()
-    if local_serial_list is not None:
-      local_serial_list = json.loads(local_serial_list)
-      for serial in local_serial_list:
-        if ('imdbId' in serial and serial['imdbId'] == imdbId) or ('cleanTitle' in serial and serial_name_match(serial['cleanTitle'], original_all_name) or ('title' in serial and serial['title'] in original_all_name) ) :
+  def does_series_exist(self, imdbId, original_titles):
+    added_series = self.get_added_series()
+    if added_series is not None:
+      added_series = json.loads(added_series)
+      for series in added_series:
+        if ('imdbId' in series and series['imdbId'] == imdbId) or ('cleanTitle' in series and series_title_match(series['cleanTitle'], original_titles) or ('title' in series and series['title'] in original_titles) ) :
          return True
     return False

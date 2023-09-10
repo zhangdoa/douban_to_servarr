@@ -1,0 +1,66 @@
+global:
+  # INFO, WARNING, ERROR
+  log_level: ERROR
+douban:
+  # There could be movies that can't be accessed without logging in for multiple reasons.
+  # You could log in to your account at https://movie.douban.com and use the browser's developer tool to check the cookies (Chrome: F12 - Network).
+  # When the panel is enabled and after you reload the page once more, there should be a resource named "movie.douban.com", and you can find the cookies in Headers - Requested Headers.
+  cookies: ''
+  #是否自动翻页，豆瓣的电影页面是分页的方式，开启此配置将自动点击下一页读取更多电影信息，推荐开启；
+  turn_page: true
+  #wish为想看、do为在看、collect为看过，多个支持;号隔开 示范：wish;do
+  types: wish
+  #这个就是豆瓣ID https://movie.douban.com/people/user1/wish PC端，这个访问地址中的user1 就是你的豆瓣ID，豆瓣手机客户端，也可以在账户管理页面看到，支持监听多个用户，;号隔开
+  user_domain: user1;user2;user3
+  #你加入想看的电影一定是有添加时间的，这个就是取多少天内的电影；如果你曾经在想看点了很多不想看的电影，用这个配置，一定程度上可以过滤掉无效被你遗忘的信息；
+  within_days: 0
+   # YYYY-MM-DD, or 'today'
+  from_date: 'today'
+  # YYYY-MM-DD, or 'epoch' from 1970-01-01
+  to_date: 2012-01-01
+  save_fetched_list: true
+  # fetch_only, add_from_file, fetch_and_add
+  mode: 'fetch_and_add' 
+  # 19700101_010101_fetched_list.json, for example. It would be used only if save_fetched_list is set to true
+  saved_fetched_list: '19700101_010101_fetched_list.json'
+# See https://wiki.servarr.com/en/radarr for the details
+radarr:
+  host: localhost
+  port: 7878
+  url_base: ''
+  https: false
+  # See https://wiki.servarr.com/en/radarr/settings#security
+  api_key: ''
+  # Should be the same path you set for https://wiki.servarr.com/en/radarr/settings#root-folders
+  rootFolderPath: "/movies"
+  # Should be the index of your preferred quality profile. See https://wiki.servarr.com/en/radarr/settings#quality-profiles
+  qualityProfileId: 1
+  addOptions: {searchForMovie: true}
+  minimumAvailability: 'announced'
+  monitored: false
+ # See https://wiki.servarr.com/en/sonarr for the details
+sonarr:
+  host: localhost
+  port: 8989
+  url_base: ''
+  https: false
+  # See https://wiki.servarr.com/en/sonarr/settings#security
+  api_key: ''
+  # Should be the same path you set for https://wiki.servarr.com/en/sonarr/settings#root-folders
+  rootFolderPath: "/tv"
+  # Should be the index of your preferred quality profile. See https://wiki.servarr.com/en/sonarr/settings#quality-profiles
+  qualityProfileId: 1
+  # Should be the index of your preferred language in the selected quality profile. See https://wiki.servarr.com/en/sonarr/settings#language-profiles
+  languageProfileId : 1
+  # Default series type. See all possible values on https://sonarr.tv/docs/api/ - Schemas - SeriesTypes.
+  seriesType : 'Standard'
+  seasonFolder: true 
+  monitored: false
+  addOptions : {monitor: "all", searchForCutoffUnmetEpisodes: true, searchForMissingEpisodes: true}
+  # 这是为了根据不同类型的资源设置，不同的下载路径和剧集类型，这样就不必将所有资源放在一个目录了
+  genreMappingPath: [
+    { genre: ["电视剧","剧情"], rootFolderPath: '/media/电视剧', seriesType: 'Standard' },
+    { genre: ["动漫", "动画"], rootFolderPath: '/media/动漫', seriesType: 'Anime'},
+    { genre: ["纪录片"], rootFolderPath: '/media/纪录片', seriesType: 'Standard'},
+    { genre: ["综艺", "真人秀"], rootFolderPath: '/media/综艺', seriesType: 'Daily'}
+  ]

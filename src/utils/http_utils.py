@@ -35,7 +35,7 @@ class RequestUtils:
             time.sleep(sleep_secs)
         self.__last_request_time = datetime.datetime.now()
 
-    def post(self, url, params, headers={}):
+    def post_and_return_content(self, url, params, headers={}):
         i = 0
         while i < self.max_attempt:
             try:
@@ -46,7 +46,7 @@ class RequestUtils:
             except self.session.exceptions.RequestException:
                 i += 1
 
-    def get(self, url, params=None, headers=None):
+    def get_and_return_content(self, url, params=None, headers=None):
         i = 0
         while i < self.max_attempt:
             try:
@@ -56,7 +56,7 @@ class RequestUtils:
             except requests.exceptions.RequestException:
                 i += 1
 
-    def get_res(self, url, params=None, headers={}):
+    def get(self, url, params=None, headers={}):
         i = 0
         while i < self.max_attempt:
             try:
@@ -66,7 +66,7 @@ class RequestUtils:
                 print(e)
                 i += 1
 
-    def post_res(self, url, params=None, headers={}, allow_redirects=True):
+    def post(self, url, params=None, headers={}, allow_redirects=True):
         i = 0
         while i < self.max_attempt:
             try:

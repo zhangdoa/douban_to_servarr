@@ -1,4 +1,4 @@
-def crate_number_list(start, end):
+def create_number_list(start, end):
     if start is None:
         start = 1
     if end is None:

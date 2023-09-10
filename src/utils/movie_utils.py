@@ -37,7 +37,7 @@ def is_chinese(string):
     return False
 
 # 例如: 我们这一天 第六季 =》 我们这一天; This Is Us Season 6 => This Is Us
-def format_serial_name(str = ''):
+def format_series_title(str = ''):
     result = str
     if is_chinese(str):
         result = str.split(' ')
@@ -74,9 +74,9 @@ def get_Max_common_substr(s1, s2):
     return maxNum, s1[p+1-maxNum : p+1]
 def get_clean_title(s):
     return ''.join(list(filter(str.isalnum, s))).lower()
-def serial_name_match(searched_clean_title, douban_name_list):
-    for name in douban_name_list:
-      [lenMatch,strMatch] =  get_Max_common_substr(searched_clean_title,get_clean_title(name))
+def series_title_match(searched_clean_title, douban_title_list):
+    for title in douban_title_list:
+      [lenMatch,strMatch] =  get_Max_common_substr(searched_clean_title,get_clean_title(title))
       if (lenMatch >= len(searched_clean_title)* 0.5) :
           return True
     return False
@@ -116,15 +116,15 @@ def parse_year_by_str(str):
     return year
 
 
-def parse_episode_by_name(name, total_episode):
-    if name is None:
+def parse_episode_by_title(title, total_episode):
+    if title is None:
         return None
     ep_start = None
     ep_end = None
     match_all_ep = False
     # 匹配是否全集
     for p in __all_episode_patterns:
-        m = p.search(name)
+        m = p.search(title)
         if m:
             if len(m.groups()) > 0:
                 end = __to_number(m.group(1))
@@ -136,7 +136,7 @@ def parse_episode_by_name(name, total_episode):
             break
     if not match_all_ep:
         for p in __episode_patterns:
-            m = p.search(name)
+            m = p.search(title)
             if m:
                 if len(m.groups()) == 1:
                     ep_start = __to_number(m.group(1))
@@ -150,7 +150,7 @@ def parse_episode_by_name(name, total_episode):
     season_end = None
     match_all_season = False
     for p in __all_season_patterns:
-        m = p.search(name)
+        m = p.search(title)
         if m:
             season_start = 1
             season_end = __to_number(m.group(1))
@@ -158,7 +158,7 @@ def parse_episode_by_name(name, total_episode):
             break
     if not match_all_season:
         for p in __season_patterns:
-            m = p.search(name)
+            m = p.search(title)
             if m:
                 if len(m.groups()) == 1:
                     season_start = __to_number(m.group(1))
@@ -181,8 +181,8 @@ def parse_episode_by_name(name, total_episode):
         # 匹配到很多季信息，集数就很难确定了
         ep_start = None
         ep_end = None
-    season_index = number_utils.crate_number_list(season_start, season_end)
-    ep_index = number_utils.crate_number_list(ep_start, ep_end)
+    season_index = number_utils.create_number_list(season_start, season_end)
+    ep_index = number_utils.create_number_list(ep_start, ep_end)
     return {
         'season': {'start': season_start, 'end': season_end, 'complete': match_all_season,
                    'index': season_index},
@@ -257,7 +257,7 @@ if __name__ == '__main__':
     ]:
         print(parse_year_by_str(s), s)
     for s in ['小猪佩奇第七季.Peppa.Pig.Season.7.Complete.4K.WEB-DL.H265.AAC-OurTV']:
-        data = parse_episode_by_name(s, 26)
+        data = parse_episode_by_title(s, 26)
         print(data)
         print('第%s-%s季 %s（%s-%s集 %s）    %s' % (
             data['season']['start'], data['season']['end'], '全季' if data['season']['complete'] else '未完结',
