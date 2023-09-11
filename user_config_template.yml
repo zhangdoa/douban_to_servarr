@@ -33,12 +33,12 @@ radarr:
   api_key: ''
   # Should be the same path you set for https://wiki.servarr.com/en/radarr/settings#root-folders
   rootFolderPath: "/movies"
+  monitored: false
+  addOptions: {searchForMovie: true}
   # Should be the index of your preferred quality profile. See https://wiki.servarr.com/en/radarr/settings#quality-profiles
   qualityProfileId: 1
-  addOptions: {searchForMovie: true}
   minimumAvailability: 'announced'
-  monitored: false
- # See https://wiki.servarr.com/en/sonarr for the details
+# See https://wiki.servarr.com/en/sonarr for the details
 sonarr:
   host: localhost
   port: 8989
@@ -48,19 +48,18 @@ sonarr:
   api_key: ''
   # Should be the same path you set for https://wiki.servarr.com/en/sonarr/settings#root-folders
   rootFolderPath: "/tv"
+  monitored: false
+  addOptions : {monitor: "all", searchForCutoffUnmetEpisodes: true, searchForMissingEpisodes: true}
   # Should be the index of your preferred quality profile. See https://wiki.servarr.com/en/sonarr/settings#quality-profiles
   qualityProfileId: 1
   # Should be the index of your preferred language in the selected quality profile. See https://wiki.servarr.com/en/sonarr/settings#language-profiles
   languageProfileId : 1
   # Default series type. See all possible values on https://sonarr.tv/docs/api/ - Schemas - SeriesTypes.
   seriesType : 'Standard'
-  seasonFolder: true 
-  monitored: false
-  addOptions : {monitor: "all", searchForCutoffUnmetEpisodes: true, searchForMissingEpisodes: true}
-  # 这是为了根据不同类型的资源设置，不同的下载路径和剧集类型，这样就不必将所有资源放在一个目录了
-  genreMappingPath: [
-    { genre: ["电视剧","剧情"], rootFolderPath: '/media/series', seriesType: 'Standard' },
-    { genre: ["动漫", "动画"], rootFolderPath: '/media/anime', seriesType: 'Anime'},
-    { genre: ["纪录片"], rootFolderPath: '/media/documentaries', seriesType: 'Standard'},
-    { genre: ["综艺", "真人秀"], rootFolderPath: '/media/shows', seriesType: 'Daily'}
+  addSeasonSubfolder: true 
+  genreSubfolderPath: [
+    { genre: ["电视剧","剧情"], path: '/series', seriesType: 'Standard' },
+    { genre: ["动漫", "动画"], path: '/anime', seriesType: 'Anime'},
+    { genre: ["纪录片"], path: '/documentaries', seriesType: 'Standard'},
+    { genre: ["综艺", "真人秀"], path: '/shows', seriesType: 'Daily'}
   ]
