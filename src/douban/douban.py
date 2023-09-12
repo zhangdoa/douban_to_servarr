@@ -54,10 +54,15 @@ class DoubanMovieCrawler:
             logger.error("Can't find any titles for {}", url)
             return None
 
-        found_imdb_ids = re.findall('<span class="pl">IMDb: </span>([^<]+)<br>', text)
+        found_imdb_ids = re.findall('<span class="pl">IMDb:</span>([^<]+)<br>', text)
         imdb_id = ""
         if len(found_imdb_ids) > 0:
             imdb_id = found_imdb_ids[0]
+            imdb_id = imdb_id.replace(" ", "")
+        else:
+            logger.warning(
+                "Your list contains a rare gem《{}》that doesn't have an IMDB ID.", title
+            )
 
         # less critical fields(?)
         found_aliases = re.findall('<span class="pl">又名:</span>([^<]+)<br/>', text)
@@ -66,24 +71,12 @@ class DoubanMovieCrawler:
             aliases = found_aliases[0].strip().split(" / ")
         aliases = list(map(lambda x: html.unescape(x), aliases))
 
-        found_years = re.findall(r'<span class="year">\((\d+)\)</span>', text)
-        if len(found_years) > 0:
-            year = found_years[0]
-
         found_genres = re.findall(r'<span\s+property="v:genre">([^>]+)</span>', text)
         genres = []
         for genre in found_genres:
             genres.append(genre)
 
-        found_release_dates = re.findall(
-            r'<span property="v:initialReleaseDate" content="(\d+-\d+-\d+)\(([^)]+)\)">',
-            text,
-        )
-        release_dates = []
-        found_release_dates.sort(reverse=False)
-        for release_date in found_release_dates:
-            release_dates.append({"date": release_date[0], "region": release_date[1]})
-
+        # TODO: Not working anymore!
         found_seasons = re.search(r'<span\s*class="pl">季数:</span>\s*(\d+)<br/>', text)
         seasons = None
         if found_seasons:
@@ -91,8 +84,8 @@ class DoubanMovieCrawler:
 
         found_episodes = re.findall(r'<span class="pl">集数:</span>\s*(\d+)<br/>', text)
         if found_episodes is not None and len(found_episodes) > 0:
-            episodes = int(str(found_episodes[0]))
             type = "Series"
+
             # 当影视为剧集时，本地语言影视名，需要考虑到第*季字符的影响，不能直接按空格切分，如 权力的游戏 第八季 Game。。。
             found_seasons = re.search("第(.+)季", title)
             if found_seasons:
@@ -108,7 +101,6 @@ class DoubanMovieCrawler:
             original_title = title[first_space_idx + 1 : len(title)]
         else:
             type = "Movie"
-            episodes = 1
             first_space_idx = title.find(" ")
             original_title = title[first_space_idx + 1 : len(title)]
         if first_space_idx != -1:
@@ -118,12 +110,8 @@ class DoubanMovieCrawler:
             "title": html.unescape(title),
             "original_title": html.unescape(original_title),
             "aliases": aliases,
-            "year": year,
             "genres": genres,
-            "release_dates": release_dates,
             "imdb_id": imdb_id,
-            "seasons": seasons,
-            "episodes": episodes,
         }
 
     def get_movie_details_by_id(self, id):
@@ -132,21 +120,6 @@ class DoubanMovieCrawler:
     def get_user_movie_lists(
         self, user, list_types=["wish"], within_days=365, turn_page=True
     ) -> object:
-        """
-        获取豆瓣电影想看
-        :param user: 豆瓣唯一账号
-        :param types: 豆瓣用户电影类型，支持wish（想看）、do（在看）、collect（看过）
-        :param within_days:多少天内加入想看的影视，默认365
-        :param turn_page: 是否自动翻页
-        :return: {'title': '地球改变之年'
-        , 'original_title': 'The Year Earth Changed'
-        , 'year': '2021'
-        , 'type': 'Movie'
-        , 'count': None
-        , 'release_date': [{'date': '2021-04-16', 'region': '美国'}]
-        , 'genre': ['纪录片']
-        , 'added_date': '2022-01-01'}
-        """
         movie_lists = {}
         for type in list_types:
             logger.info("开始获取{} {}的影视", user, type)

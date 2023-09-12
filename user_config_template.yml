@@ -23,6 +23,7 @@ douban:
   mode: 'fetch_and_add' 
   # 19700101_010101_fetched_list.json, for example. It would be used only if save_fetched_list is set to true
   saved_fetched_list: '19700101_010101_fetched_list.json'
+# See https://wiki.servarr.com/docker-guide for the best setup recommendation
 # See https://wiki.servarr.com/en/radarr for the details
 radarr:
   host: localhost
@@ -32,7 +33,7 @@ radarr:
   # See https://wiki.servarr.com/en/radarr/settings#security
   api_key: ''
   # Should be the same path you set for https://wiki.servarr.com/en/radarr/settings#root-folders
-  rootFolderPath: "/movies"
+  rootFolderPath: "/data/media/movies"
   monitored: false
   addOptions: {searchForMovie: true}
   # Should be the index of your preferred quality profile. See https://wiki.servarr.com/en/radarr/settings#quality-profiles
@@ -47,7 +48,7 @@ sonarr:
   # See https://wiki.servarr.com/en/sonarr/settings#security
   api_key: ''
   # Should be the same path you set for https://wiki.servarr.com/en/sonarr/settings#root-folders
-  rootFolderPath: "/tv"
+  rootFolderPath: "/data/media/tv"
   monitored: false
   addOptions : {monitor: "all", searchForCutoffUnmetEpisodes: true, searchForMissingEpisodes: true}
   # Should be the index of your preferred quality profile. See https://wiki.servarr.com/en/sonarr/settings#quality-profiles

@@ -34,15 +34,31 @@ class Radarr(Servarr):
         )
         self.minimumAvailability = minimumAvailability
 
-    def add(self, caller_object_details, servarr_object_info, list_type):
-        api = "/api/v3/movie"
-        params = self.get_add_call_params(servarr_object_info, list_type)
-        params["minimumAvailability"] = self.minimumAvailability
-
-        r = self.request_wrapper.post(
-            self.server + api, params=json.dumps(params), headers=self.headers
+    def search_and_add(self, caller_object_details, list_type):
+        imdb_id = caller_object_details["imdb_id"]
+        title = caller_object_details["title"]
+        if imdb_id is not None:
+            imdb_id = imdb_id.strip()
+            if self.try_to_add_by_term(
+                "imdb:" + imdb_id, caller_object_details, list_type
+            ):
+                logger.info(
+                    "Successfully added《{}》by searching with IMDB ID {}.",
+                    title,
+                    imdb_id,
+                )
+                return True
+        logger.warning(
+            "Unable to find《{}》on IMDB, the movie won't be added to Radarr. You may consider adding it to IMDB first.",
+            title,
         )
-        if r.status == 200:
-            logger.info('Successfully added: "{}".', (servarr_object_info["title"]))
-        else:
-            logger.error('Failed to add: "{}".', (servarr_object_info["title"]))
+        return None
+
+    def get_add_call_params(
+        self, caller_object_details, servarr_object_info, list_type
+    ):
+        params = Servarr.get_add_call_params(
+            self, caller_object_details, servarr_object_info, list_type
+        )
+        params["minimumAvailability"] = self.minimumAvailability
+        return params

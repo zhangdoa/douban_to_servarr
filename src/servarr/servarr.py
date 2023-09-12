@@ -205,57 +205,46 @@ class Servarr:
 
     def find_added_item(self, caller_object_details):
         imdb_id = caller_object_details["imdb_id"].strip()
-        searching_title = self.get_searching_title(caller_object_details)
+        searching_titles = self.get_searching_titles(caller_object_details)
         if self.added_items is not None:
             for item in self.added_items:
-                if self.is_any_matching(imdb_id, searching_title, item):
+                if self.is_any_matching(imdb_id, searching_titles, item):
                     return item
         return None
 
-    def is_any_matching(self, imdb_id, searching_title, item):
+    def is_any_matching(self, imdb_id, searching_titles, item):
         is_imdb_id_matching = "imdbId" in item and item["imdbId"] == imdb_id
-        is_title_matching = "title" in item and item["title"] == searching_title
+        is_title_matching = "title" in item and item["title"] in searching_titles
         return is_imdb_id_matching or is_title_matching
 
+    # Searching-by-title is generally not as accurate as the ID-based searching. This is an example implementation and shouldn't be used for real purposes.
     def search_and_add(self, caller_object_details, list_type):
-        imdb_id = caller_object_details["imdb_id"]
         title = caller_object_details["title"]
-        if imdb_id is not None:
-            imdb_id = imdb_id.strip()
+        searching_titles = self.get_searching_titles(caller_object_details)
+        for searching_title in searching_titles:
             if self.try_to_add_by_term(
-                "imdb:" + imdb_id, caller_object_details, list_type
-            ):
-                logger.info(
-                    "Successfully added《{}》by searching with the IMDB ID {}.",
-                    title,
-                    imdb_id,
-                )
-                return True
-
-        searching_title = self.get_searching_title(caller_object_details)
-        searching_terms = [searching_title]
-        searching_terms.extend(caller_object_details["aliases"])
-        for searching_term in searching_terms:
-            if self.try_to_add_by_term(
-                searching_term, caller_object_details, list_type
+                searching_title, caller_object_details, list_type
             ):
                 logger.info(
                     'Successfully added《{}》by searching with the term "{}".',
                     title,
-                    searching_term,
+                    searching_title,
                 )
                 return True
 
         logger.warning("Can't find 《{}》.", title)
         return False
 
-    def get_searching_title(self, caller_object_details):
-        searching_title = caller_object_details["title"]
+    def get_searching_titles(self, caller_object_details):
+        title = caller_object_details["title"]
         original_title = caller_object_details["original_title"]
+        searching_titles = [title]
         if original_title is not None and len(original_title) > 0:
-            searching_title = original_title
-        searching_title = format_series_title(searching_title)
-        return searching_title
+            searching_titles.append(original_title)
+        searching_titles.extend(caller_object_details["aliases"])
+        for idx, searching_title in enumerate(searching_titles):
+            searching_titles[idx] = format_series_title(searching_title)
+        return searching_titles
 
     def search_item_by_term(self, term):
         api = "/api/v3/%s/lookup" % self.api_type
@@ -271,17 +260,38 @@ class Servarr:
         found_items = self.search_item_by_term(term)
         if found_items is not None and len(found_items) > 0:
             imdb_id = caller_object_details["imdb_id"]
-            searching_title = self.get_searching_title(caller_object_details)
-            for idx, found_item in enumerate(found_items):
-                if self.is_any_matching(imdb_id, searching_title, found_item):
-                    self.add(caller_object_details, found_item, list_type)
-                    return True
+            searching_titles = self.get_searching_titles(caller_object_details)
+            for found_item in found_items:
+                if self.is_any_matching(imdb_id, searching_titles, found_item):
+                    return self.add(caller_object_details, found_item, list_type)
         return False
 
     def add(self, caller_object_details, servarr_object_info, list_type):
-        return True
+        api = "/api/v3/%s" % self.api_type
+        params = self.get_add_call_params(
+            caller_object_details, servarr_object_info, list_type
+        )
+        r = self.request_wrapper.post(
+            self.server + api, data=json.dumps(params), headers=self.headers
+        )
+        content = json.loads(str(r.content, "UTF-8"))
+        if r.status_code == 201:
+            return True
+        # TODO: Better parse this and filter out the already-added case
+        elif len(content) > 0:
+            logger.info(
+                'Failed to add 《{}》. The server says: "{}".',
+                (caller_object_details["title"]),
+                content,
+            )
+            return False
+        else:
+            logger.error("Failed to add:《{}》.", (caller_object_details["title"]))
+            return None
 
-    def get_add_call_params(self, servarr_object_info, list_type):
+    def get_add_call_params(
+        self, caller_object_details, servarr_object_info, list_type
+    ):
         params = servarr_object_info
         params["qualityProfileId"] = self.qualityProfileId
         params["rootFolderPath"] = self.rootFolderPath
