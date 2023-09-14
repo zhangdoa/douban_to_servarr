@@ -8,7 +8,7 @@ from sonarr.sonarr import Sonarr
 from lidarr.lidarr import Lidarr
 
 
-class MovieBot:
+class ListParser:
     def __init__(self, **kwargs):
         self.workdir = kwargs["workdir"]
         self.douban_config = kwargs["douban"]

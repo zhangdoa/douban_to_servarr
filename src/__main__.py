@@ -4,7 +4,7 @@ import argparse
 import datetime
 import yaml
 from loguru import logger
-from movie_bot import MovieBot
+from list_parser import ListParser
 
 user_setting_name = "user_config.yml"
 
@@ -96,7 +96,7 @@ def create_bot(user_config, workdir):
             "qualityProfileId": user_config["lidarr"]["qualityProfileId"],
         },
     }
-    return MovieBot(**params)
+    return ListParser(**params)
 
 
 if __name__ == "__main__":
