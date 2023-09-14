@@ -153,6 +153,6 @@ cython_debug/
 .idea/
 
 # Project-specific files
-.log
-.json
+*.log
+*.list
 user_config.yml
