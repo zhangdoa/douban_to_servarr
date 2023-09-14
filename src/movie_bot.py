@@ -176,7 +176,8 @@ class MovieBot:
                 entry_details["titles"] = user_entry["titles"]
                 entry_details_lists[list_type].append(entry_details)
 
-        self.save_lists("entry_details", category, entry_details_lists)
+        if len(entry_details_lists) > 0:
+            self.save_lists("entry_details", category, entry_details_lists)
         return entry_details_lists
 
     def load_lists(self, category, list_file_path):

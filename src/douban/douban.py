@@ -108,7 +108,8 @@ class DoubanCrawler:
                         page_count,
                     )
                     page_count = page_count + 1
-            entry_lists[list_type] = entry_list
+            if len(entry_list) > 0:
+                entry_lists[list_type] = entry_list
             logger.info("Total scraped entries: {}.", len(entry_list))
         return entry_lists
 
@@ -129,6 +130,8 @@ class DoubanMovieCrawler(DoubanCrawler):
         soup = BeautifulSoup(text, "lxml")
         html = etree.HTML(str(soup).strip())
 
+        episode = None
+        external_id = ""
         found_info_span_list = html.xpath('//div[@id="info"]/span')
         if len(found_info_span_list) > 0:
             for found_info_span in found_info_span_list:
@@ -142,10 +145,9 @@ class DoubanMovieCrawler(DoubanCrawler):
         found_genres = html.xpath('//span[@property="v:genre"]')
         genres = []
         for genre in found_genres:
-            genres.append(genre.text().strip())
+            genres.append(genre.text.strip())
 
-        found_episodes = re.findall(r'<span class="pl">集数:</span>\s*(\d+)<br/>', text)
-        if episode != "":
+        if episode is not None and episode != "":
             type = "Series"
         else:
             type = "Movie"
@@ -156,7 +158,7 @@ class DoubanMovieCrawler(DoubanCrawler):
             "external_id": external_id,
         }
         logger.info(
-            "Scraped: ",
+            "Scraped: {}",
             result,
         )
         return result
