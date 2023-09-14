@@ -5,21 +5,28 @@ import re
 import cn2an
 from lxml import etree
 from loguru import logger
+from bs4 import BeautifulSoup
 
 from utils.http_utils import RequestUtils
 
 
-class DoubanMovieCrawler:
-    def __init__(self, cookies):
-        self.__headers = {
-            "Referer": "https://movie.douban.com/",
+class DoubanCrawler:
+    def __init__(self, category, cookies):
+        self.category = category
+        self.url = "https://%s.douban.com" % self.category
+        self.headers = {
+            "Referer": self.url,
+            "Accept-Encoding": "gzip",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
         }
-        self.req = RequestUtils(request_interval_mode=True)
-        # 先访问一次首页，显得像个正常人
-        initial_headers = self.__headers
+        self.request_wrapper = RequestUtils(request_interval_mode=True)
+
+        # Initialize the session
+        initial_headers = self.headers
         initial_headers["Cookies"] = cookies
-        res = self.request_get("https://movie.douban.com/", headers=initial_headers)
+        res = self.request_get(self.url, headers=initial_headers)
+        if res.status_code != 200:
+            logger.error("Failed to create a crawler for category {}.", self.category)
 
     def atoi(self, str):
         if str.isdigit():
@@ -28,124 +35,48 @@ class DoubanMovieCrawler:
             return cn2an.cn2an(str)
 
     def request_get(self, url, headers):
-        res = self.req.get(url=url, headers=headers)
+        res = self.request_wrapper.get(url=url, headers=headers)
         if res == None:
-            logger.error("Bad result returned when requesting {}", url)
+            logger.error("Bad result returned when requesting {}.", url)
             return None
-        text = res.text
-        if text.find("有异常请求从你的 IP 发出") != -1:
-            logger.warning(
-                "The crawler is detected, please try again with a different IP"
-            )
+        if res.status_code != 200:
+            logger.warning("Unable to scrape {}.", url)
             return None
         return res
 
-    def get_movie_details(self, url):
-        res = self.request_get(url, headers=self.__headers)
-        if res == None:
-            return None
-
-        text = res.text
-        # mandatory fields
-        found_titles = re.findall('<span property="v:itemreviewed">(.+)</span>', text)
-        if len(found_titles) > 0:
-            title = found_titles[0]
-        else:
-            logger.error("Can't find any titles for {}", url)
-            return None
-
-        found_imdb_ids = re.findall('<span class="pl">IMDb:</span>([^<]+)<br>', text)
-        imdb_id = ""
-        if len(found_imdb_ids) > 0:
-            imdb_id = found_imdb_ids[0]
-            imdb_id = imdb_id.replace(" ", "")
-        else:
-            logger.warning(
-                "Your list contains a rare gem《{}》that doesn't have an IMDB ID.", title
-            )
-
-        # less critical fields(?)
-        found_aliases = re.findall('<span class="pl">又名:</span>([^<]+)<br/>', text)
-        aliases = []
-        if len(found_aliases) > 0:
-            aliases = found_aliases[0].strip().split(" / ")
-        aliases = list(map(lambda x: html.unescape(x), aliases))
-
-        found_genres = re.findall(r'<span\s+property="v:genre">([^>]+)</span>', text)
-        genres = []
-        for genre in found_genres:
-            genres.append(genre)
-
-        # TODO: Not working anymore!
-        found_seasons = re.search(r'<span\s*class="pl">季数:</span>\s*(\d+)<br/>', text)
-        seasons = None
-        if found_seasons:
-            seasons = found_seasons.group(1)
-
-        found_episodes = re.findall(r'<span class="pl">集数:</span>\s*(\d+)<br/>', text)
-        if found_episodes is not None and len(found_episodes) > 0:
-            type = "Series"
-
-            # 当影视为剧集时，本地语言影视名，需要考虑到第*季字符的影响，不能直接按空格切分，如 权力的游戏 第八季 Game。。。
-            found_seasons = re.search("第(.+)季", title)
-            if found_seasons:
-                season_str_in_title = found_seasons.group()
-                if seasons is None:
-                    seasons = self.atoi(found_seasons.group(1))
-                first_space_idx = title.find(season_str_in_title + " ")
-                if first_space_idx != -1:
-                    first_space_idx = first_space_idx + len(season_str_in_title)
-            else:
-                first_space_idx = title.find(" ")
-                seasons = 1
-            original_title = title[first_space_idx + 1 : len(title)]
-        else:
-            type = "Movie"
-            first_space_idx = title.find(" ")
-            original_title = title[first_space_idx + 1 : len(title)]
-        if first_space_idx != -1:
-            title = title[0:first_space_idx]
-        return {
-            "type": type,
-            "title": html.unescape(title),
-            "original_title": html.unescape(original_title),
-            "aliases": aliases,
-            "genres": genres,
-            "imdb_id": imdb_id,
-        }
-
-    def get_movie_details_by_id(self, id):
-        return self.get_movie_details("https://movie.douban.com/subject/%s" % id)
-
-    def get_user_movie_lists(
-        self, user, list_types=["wish"], within_days=365, turn_page=True
+    def get_user_entry_lists(
+        self, user, list_types, within_days=365, turn_page=True
     ) -> object:
-        movie_lists = {}
-        for type in list_types:
-            logger.info("开始获取{} {}的影视", user, type)
+        entry_lists = {}
+        for list_type in list_types:
+            logger.info('Start to scrape list "{}" for "{}"', list_type, user)
             offset = 0
             uri = "/people/%s/%s?start=%s&sort=time&rating=all&filter=all&mode=grid" % (
                 user,
-                type,
+                list_type,
                 offset,
             )
             page_count = 1
-            movie_list = []
+            entry_list = []
             while uri is not None:
-                url = "https://movie.douban.com" + uri
-                res = self.request_get(url, headers=self.__headers)
+                # The next page href is not consistent on different category's pages
+                if self.url in uri:
+                    url = uri
+                else:
+                    url = self.url + uri
+                res = self.request_get(url, headers=self.headers)
                 if res == None:
-                    return None
+                    continue
                 html = etree.HTML(res.text)
                 page = html.xpath('//div[@class="paginator"]/span[@class="next"]/a')
                 if len(page) > 0:
                     uri = page[0].attrib["href"]
                 else:
                     uri = None
-                movie_list_url = html.xpath('//li[@class="title"]/a/@href')
+                entry_list_url = html.xpath('//li[@class="title"]/a[1]/@href')
                 added_date_list = html.xpath('//li/span[@class="date"]/text()')
-                movie_list_a = html.xpath('//li[@class="title"]/a/em/text()')
-                for i in range(len(movie_list_a)):
+                entry_list_a = html.xpath('//li[@class="title"]/a/em/text()')
+                for i in range(len(entry_list_a)):
                     added_date = added_date_list[i]
                     days = (
                         datetime.datetime.now()
@@ -154,22 +85,17 @@ class DoubanMovieCrawler:
                     if within_days is not None and days > within_days:
                         turn_page = False
                         continue
-                    url = movie_list_url[i]
-                    titles = movie_list_a[i].split(" / ")
-                    if len(titles) > 1:
-                        original_title = titles[1]
-                    else:
-                        original_title = None
+                    url = entry_list_url[i]
+                    titles = entry_list_a[i].split(" / ")
                     found_ids = re.search(r"/subject/(\d+)", url)
                     if found_ids:
                         id = found_ids.group(1)
                     else:
                         id = None
-                    movie_list.append(
+                    entry_list.append(
                         {
                             "id": id.strip(),
-                            "title": titles[0],
-                            "original_title": original_title,
+                            "titles": titles,
                             "url": url,
                             "added_date": added_date,
                         }
@@ -177,8 +103,117 @@ class DoubanMovieCrawler:
                 if not turn_page:
                     break
                 if uri is not None:
-                    logger.info("已经完成{}页数据的获取，开始获取下一页...", page_count)
+                    logger.info(
+                        "Page {} has been scraped, moving to the next one...",
+                        page_count,
+                    )
                     page_count = page_count + 1
-            movie_lists[type] = movie_list
-            logger.info("{}天之内加入{}的影视，共{}部", within_days, type, len(movie_list))
-        return movie_lists
+            entry_lists[list_type] = entry_list
+            logger.info("Total scraped entries: {}.", len(entry_list))
+        return entry_lists
+
+    def get_details_by_id(self, id):
+        return self.get_entry_details("%s/subject/%s" % (self.url, id))
+
+    def get_entry_details(self, url):
+        return None
+
+
+class DoubanMovieCrawler(DoubanCrawler):
+    def get_entry_details(self, url):
+        res = self.request_get(url, headers=self.headers)
+        if res == None:
+            return None
+
+        text = res.text
+        soup = BeautifulSoup(text, "lxml")
+        html = etree.HTML(str(soup).strip())
+
+        found_info_span_list = html.xpath('//div[@id="info"]/span')
+        if len(found_info_span_list) > 0:
+            for found_info_span in found_info_span_list:
+                if found_info_span.text == "集数:":
+                    episode = found_info_span.tail.strip()
+                elif found_info_span.text == "IMDb:":
+                    external_id = found_info_span.tail.strip()
+        else:
+            logger.warning('Unable to get the media info for "{}".', url)
+
+        found_genres = html.xpath('//span[@property="v:genre"]')
+        genres = []
+        for genre in found_genres:
+            genres.append(genre.text().strip())
+
+        found_episodes = re.findall(r'<span class="pl">集数:</span>\s*(\d+)<br/>', text)
+        if episode != "":
+            type = "Series"
+        else:
+            type = "Movie"
+
+        result = {
+            "type": type,
+            "genres": genres,
+            "external_id": external_id,
+        }
+        logger.info(
+            "Scraped: ",
+            result,
+        )
+        return result
+
+
+class DoubanMusicCrawler(DoubanCrawler):
+    def get_entry_details(self, url):
+        res = self.request_get(url, headers=self.headers)
+        if res == None:
+            return None
+
+        text = res.text
+        soup = BeautifulSoup(text, "lxml")
+        html = etree.HTML(str(soup).strip())
+
+        found_titles = html.xpath('//div[@id="wrapper"]/h1/span/text()')
+        if len(found_titles) > 0:
+            titles = found_titles
+        else:
+            logger.error("Can't find any titles for {}", url)
+            return None
+
+        aliases = []
+        release_date = ""
+        external_id = ""
+        label = ""
+        found_info_span_list = html.xpath('//div[@id="info"]/span')
+        if len(found_info_span_list) > 0:
+            for found_info_span in found_info_span_list:
+                if found_info_span.text == "又名:":
+                    aliases = found_info_span.tail.strip()
+                elif found_info_span.text == "出版者:":
+                    label = found_info_span.tail.strip()
+                elif found_info_span.text == "发行时间:":
+                    release_date = found_info_span.tail.strip()
+                elif found_info_span.text == "条形码:":
+                    external_id = found_info_span.tail.strip()
+        else:
+            logger.warning('Unable to get the album info for "{}".', titles)
+
+        artists = []
+        found_artists_span_list = html.xpath('//div[@id="info"]/span/span/a')
+        if len(found_artists_span_list) > 0:
+            for found_artist in found_artists_span_list:
+                artists.append(found_artist.text.strip())
+
+        result = {
+            "type": "Music",
+            "titles": titles,
+            "aliases": aliases,
+            "artists": artists,
+            "label": label,
+            "release_date": release_date,
+            "external_id": external_id,
+        }
+        logger.info(
+            "Scraped: {}",
+            result,
+        )
+        return result

@@ -22,6 +22,7 @@ class Radarr(Servarr):
         Servarr.__init__(
             self,
             "movie",
+            "v3",
             host,
             port,
             url_base,
@@ -34,23 +35,28 @@ class Radarr(Servarr):
         )
         self.minimumAvailability = minimumAvailability
 
+    def is_any_matching(self, external_id, searching_titles, item):
+        is_external_id_matching = "imdbId" in item and item["imdbId"] == external_id
+        is_title_matching = "title" in item and item["title"] in searching_titles
+        return is_external_id_matching or is_title_matching
+
     def search_and_add(self, caller_object_details, list_type):
-        imdb_id = caller_object_details["imdb_id"]
-        title = caller_object_details["title"]
-        if imdb_id is not None:
-            imdb_id = imdb_id.strip()
+        external_id = caller_object_details["external_id"]
+        titles = caller_object_details["titles"]
+        if external_id is not None:
+            external_id = external_id.strip()
             if self.try_to_add_by_term(
-                "imdb:" + imdb_id, caller_object_details, list_type
+                "imdb:" + external_id, caller_object_details, list_type
             ):
                 logger.info(
-                    "Successfully added《{}》by searching with IMDB ID {}.",
-                    title,
-                    imdb_id,
+                    'Successfully added "{}" by searching with IMDB ID {}.',
+                    titles,
+                    external_id,
                 )
                 return True
         logger.warning(
-            "Unable to find《{}》on IMDB, the movie won't be added to Radarr. You may consider adding it to IMDB first.",
-            title,
+            'Unable to find "{}" on IMDB, the movie won\'t be added to Radarr. You may consider adding it to IMDB first.',
+            titles,
         )
         return None
 

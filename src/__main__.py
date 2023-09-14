@@ -34,13 +34,13 @@ def create_bot(user_config, workdir):
             to_date = datetime.date(1970, 1, 1)
         within_days = (from_date - to_date).days
 
-    saved_fetched_list = ""
+    list_file_path = ""
     mode = user_config["douban"]["mode"]
     if mode == "add_from_file":
-        saved_fetched_list = user_config["douban"]["saved_fetched_list"]
-        if not saved_fetched_list or saved_fetched_list == "":
+        list_file_path = user_config["douban"]["list_file_path"]
+        if not list_file_path or list_file_path == "":
             logger.error(
-                "{} mode is specified by the saved fetched list is not set", mode
+                "{} mode is specified by the saved scraped list is not set", mode
             )
             return
 
@@ -51,10 +51,11 @@ def create_bot(user_config, workdir):
             "user_domain": user_config["douban"]["user_domain"].split(";"),
             "within_days": within_days,
             "turn_page": user_config["douban"]["turn_page"],
-            "types": user_config["douban"]["types"].split(";"),
-            "save_fetched_list": user_config["douban"]["save_fetched_list"],
+            "categories": user_config["douban"]["categories"].split(";"),
+            "list_types": user_config["douban"]["list_types"].split(";"),
+            "save_scraped_list": user_config["douban"]["save_scraped_list"],
             "mode": user_config["douban"]["mode"],
-            "saved_fetched_list": saved_fetched_list,
+            "list_file_path": list_file_path,
         },
         "radarr": {
             "host": user_config["radarr"]["host"],
@@ -63,10 +64,10 @@ def create_bot(user_config, workdir):
             "api_key": user_config["radarr"]["api_key"],
             "https": user_config["radarr"]["https"],
             "rootFolderPath": user_config["radarr"]["rootFolderPath"],
+            "monitored": user_config["radarr"]["monitored"],
             "qualityProfileId": user_config["radarr"]["qualityProfileId"],
             "addOptions": user_config["radarr"]["addOptions"],
             "minimumAvailability": user_config["radarr"]["minimumAvailability"],
-            "monitored": user_config["radarr"]["monitored"],
         },
         "sonarr": {
             "host": user_config["sonarr"]["host"],
@@ -75,13 +76,24 @@ def create_bot(user_config, workdir):
             "api_key": user_config["sonarr"]["api_key"],
             "https": user_config["sonarr"]["https"],
             "rootFolderPath": user_config["sonarr"]["rootFolderPath"],
+            "monitored": user_config["sonarr"]["monitored"],
+            "addOptions": user_config["sonarr"]["addOptions"],
             "qualityProfileId": user_config["sonarr"]["qualityProfileId"],
             "languageProfileId": user_config["sonarr"]["languageProfileId"],
             "seriesType": user_config["sonarr"]["seriesType"],
             "addSeasonSubfolder": user_config["sonarr"]["addSeasonSubfolder"],
-            "monitored": user_config["sonarr"]["monitored"],
-            "addOptions": user_config["sonarr"]["addOptions"],
             "genreSubfolderPath": user_config["sonarr"]["genreSubfolderPath"],
+        },
+        "lidarr": {
+            "host": user_config["lidarr"]["host"],
+            "port": user_config["lidarr"]["port"],
+            "url_base": user_config["lidarr"]["url_base"],
+            "api_key": user_config["lidarr"]["api_key"],
+            "https": user_config["lidarr"]["https"],
+            "rootFolderPath": user_config["lidarr"]["rootFolderPath"],
+            "monitored": user_config["lidarr"]["monitored"],
+            "addOptions": user_config["lidarr"]["addOptions"],
+            "qualityProfileId": user_config["lidarr"]["qualityProfileId"],
         },
     }
     return MovieBot(**params)
