@@ -1,3 +1,4 @@
+import os
 import datetime
 import json
 from loguru import logger
@@ -77,7 +78,7 @@ class ListParser:
                     instant_add=self.douban_config["instant_add"],
                     list_file_path=self.douban_config["list_file_path"],
                 )
-        logger.info("Finished.")
+        logger.info("The scraper finished all tasks.")
 
     def process_user_lists(
         self,
@@ -128,9 +129,7 @@ class ListParser:
         entry_details_lists = {}
 
         if mode == "add_from_file":
-            user_entries_lists, entry_details_lists = self.load_lists(
-                category, list_file_path
-            )
+            user_entries_lists, entry_details_lists = self.load_lists(list_file_path)
             if len(entry_details_lists) > 0:
                 return entry_details_lists
 
@@ -176,6 +175,7 @@ class ListParser:
         for list_type in list_types:
             entry_details_lists[list_type] = []
             if list_type not in user_entries_lists:
+                logger.info("List type {} doesn't exist, skip to the next.", list_type)
                 continue
             logger.info('Processing list: "{}"...', list_type)
             for user_entry in user_entries_lists[list_type]:
@@ -196,38 +196,39 @@ class ListParser:
             self.save_lists("entry_details", category, entry_details_lists)
         return entry_details_lists
 
-    def load_lists(self, category, list_file_path):
+    def load_lists(self, list_file_path):
         user_entries_lists = {}
         entry_details_lists = {}
-        if category in list_file_path:
-            with open(list_file_path, "r", encoding="utf-8") as file:
-                loaded_list = json.load(file)
-                if "user_entries" in list_file_path:
-                    user_entries_lists = loaded_list
-                elif "entry_details" in list_file_path:
-                    entry_details_lists = loaded_list
-                else:
-                    logger.error(
-                        "Trying to load an unsupported list file '{}'.",
-                        list_file_path,
-                    )
-        else:
-            logger.error(
-                "Trying to load list file '{}' but it's not for category '{}'.",
-                list_file_path,
-                category,
-            )
+        with open(list_file_path, "r", encoding="utf-8") as file:
+            loaded_list = json.load(file)
+            if "user_entries" in list_file_path:
+                user_entries_lists = loaded_list
+            elif "entry_details" in list_file_path:
+                entry_details_lists = loaded_list
+            else:
+                logger.error(
+                    "Trying to load an unsupported list file '{}'.",
+                    list_file_path,
+                )
         return [user_entries_lists, entry_details_lists]
 
     def save_lists(self, file_type, category, lists):
+        dir_name = "lists"
+        cwd = os.getcwd()
+        dir_path = cwd + os.sep + dir_name
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
         file_name = (
             datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             + "_%s" % file_type
             + "_%s" % category
             + ".list"
         )
-        logger.info("Saving the '{}_{}' list to {}.", file_type, category, file_name)
-        with open(file_name, "w", encoding="utf-8") as list_file:
+        file_path = dir_path + os.sep + file_name
+
+        logger.info("Saving the '{}_{}' list to {}.", file_type, category, file_path)
+        with open(file_path, "w", encoding="utf-8") as list_file:
             json_obj = json.dumps(lists, indent=4, sort_keys=True)
             list_file.write(json_obj)
 

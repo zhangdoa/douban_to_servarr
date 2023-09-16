@@ -155,4 +155,5 @@ cython_debug/
 # Project-specific files
 *.log
 *.list
-user_config.yml
+*.yml
+!user_config_template.yml

@@ -1,6 +1,5 @@
 import os
 import sys
-import argparse
 import datetime
 import yaml
 from loguru import logger
@@ -31,7 +30,7 @@ def create_bot(user_config, workdir):
         if end_date == "epoch":
             end_date = datetime.date(1970, 1, 1)
     else:
-        end_date = start_date - max_scraping_days
+        end_date = start_date - datetime.timedelta(days=max_scraping_days)
 
     list_file_path = ""
     mode = user_config["douban"]["mode"]
@@ -112,11 +111,16 @@ if __name__ == "__main__":
             filter="my_module",
             level=user_config["global"]["log_level"],
         )
-        logger.add("movie_robot_{time}.log")
+        log_dir_name = "logs"
+        log_dir_path = cwd + os.sep + log_dir_name
+        if not os.path.exists(log_dir_path):
+            os.makedirs(log_dir_path)
 
-        movie_bot = create_bot(user_config, cwd)
-        if movie_bot:
-            movie_bot.start()
+        logger.add("%s%s{time}.log" % (log_dir_name, os.sep))
+
+        bot = create_bot(user_config, cwd)
+        if bot:
+            bot.start()
         else:
             logger.error(
                 "Something isn't correct, please check the console output for the details."

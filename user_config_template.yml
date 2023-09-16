@@ -21,6 +21,7 @@ douban:
   # The start scraping page. It could be useful to skip days that are not in the scraping range specified above.
   start_page: 1
   # If the scraper should add the entries as soon as the data is scraped. Setting this to false would run the adding step after the entire in-range entries are scraped.
+  # If the mode is set to 'add_from_file', you need to set this to false to force re-adding the entries.
   instant_add: true
   # Set this to 'scrape_only', 'add_from_file' or 'scrape_and_add' to suit your needs.
   mode: 'scrape_and_add'

@@ -35,8 +35,9 @@ An automated scraper tool to send entries from your [Douban](https://www.douban.
     -e PUID=1000 \
     -e PGID=1000 \
     -e TZ=Etc/UTC \
-    --restart unless-stopped
+    --restart unless-stoppedd \
+    docker.io/library/douban_to_servarr
     ```
 # Trouble shooting: 
 - Check the log file and see if there are any warnings or errors. 
-- - Check your Servarr configurations.
+- Check your Servarr configurations.
