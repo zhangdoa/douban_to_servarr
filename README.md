@@ -20,13 +20,14 @@ An automated scraper tool to send entries from your [Douban](https://www.douban.
    ```
     version: "2.1"
     services:
-    douban_to_servarr:
-        container_name: douban_to_servarr
-        network_mode: 'host'
-        environment:
-        - PUID=1000
-        - PGID=1000
-        - TZ=Etc/UTC
+        douban_to_servarr:
+            image: docker.io/library/douban_to_servarr
+            container_name: douban_to_servarr
+            network_mode: 'host'
+            environment:
+            - PUID=1000
+            - PGID=1000
+            - TZ=Etc/UTC
    ```
 3. Or start with docker-cli:
     ```
