@@ -69,16 +69,16 @@ sonarr:
     { genre: ["纪录片"], path: '/documentaries', seriesType: 'Standard'},
     { genre: ["综艺", "真人秀"], path: '/shows', seriesType: 'Daily'}
   ]
-  # See https://wiki.servarr.com/en/lidarr for the details
-  lidarr:
-    host: localhost
-    port: 8686
-    url_base: ''
-    https: false
-    # See https://wiki.servarr.com/en/lidarr/settings#security
-    api_key: ''
-    # Should be the same path you set for https://wiki.servarr.com/en/lidarr/settings#root-folders
-    rootFolderPath: "/data/media/music"
-    monitored: false
-    addOptions: {addType: "automatic", searchForNewAlbum: true}
-    qualityProfileId: 1
+# See https://wiki.servarr.com/en/lidarr for the details
+lidarr:
+  host: localhost
+  port: 8686
+  url_base: ''
+  https: false
+  # See https://wiki.servarr.com/en/lidarr/settings#security
+  api_key: ''
+  # Should be the same path you set for https://wiki.servarr.com/en/lidarr/settings#root-folders
+  rootFolderPath: "/data/media/music"
+  monitored: false
+  addOptions: {addType: "automatic", searchForNewAlbum: true}
+  qualityProfileId: 1

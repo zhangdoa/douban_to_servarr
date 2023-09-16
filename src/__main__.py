@@ -12,7 +12,8 @@ def load_user_config(workdir):
     user_config_file_path = workdir + os.sep + user_setting_name
     if not os.path.exists(user_config_file_path):
         logger.warning(
-            "File user_config.xml doesn't exist. Please create one from user_config_template.xml."
+            "File user_config.xml doesn't exist at {}. Please create one from user_config_template.xml.",
+            user_config_file_path,
         )
         return None
     with open(user_config_file_path, "r", encoding="utf-8") as file:

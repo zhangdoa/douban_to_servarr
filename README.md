@@ -22,11 +22,11 @@ An automated scraper tool to send entries from your [Douban](https://www.douban.
     services:
     douban_to_servarr:
         container_name: douban_to_servarr
+        network_mode: 'host'
         environment:
         - PUID=1000
         - PGID=1000
         - TZ=Etc/UTC
-        restart: unless-stopped
    ```
 3. Or start with docker-cli:
     ```
@@ -34,8 +34,8 @@ An automated scraper tool to send entries from your [Douban](https://www.douban.
     --name=douban_to_servarr \
     -e PUID=1000 \
     -e PGID=1000 \
+    --network="host" \
     -e TZ=Etc/UTC \
-    --restart unless-stoppedd \
     docker.io/library/douban_to_servarr
     ```
 # Trouble shooting: 
