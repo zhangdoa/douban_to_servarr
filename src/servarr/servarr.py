@@ -2,8 +2,7 @@ import json
 
 from loguru import logger
 
-from utils.http_utils import RequestUtils
-from utils.movie_utils import format_series_title
+from utils.request_utils import RequestUtils
 
 
 class Servarr:
@@ -45,16 +44,16 @@ class Servarr:
             port if url_base == "" else url_base,
         )
 
-        self.tags = self.get_tags()
-
-        self.try_to_create_tag("unwatched")
-        self.try_to_create_tag("watching")
-        self.try_to_create_tag("watched")
+        self.tags = self.get_added_tags()
+        self.try_to_create_tags()
         self.update_tags()
 
         self.added_items = self.get_added_items()
 
-    def get_tags(self):
+    def try_to_create_tags(self):
+        pass
+
+    def get_added_tags(self):
         api = "/api/%s/tag" % self.api_version
         r = self.request_wrapper.get_and_return_content(
             self.server + api, headers=self.headers
@@ -90,17 +89,18 @@ class Servarr:
                 return None
             # TODO: This would return a 500 and saying "Can't insert model with existing ID x" if the ID x is not added yet...
             if r.status_code != 202 and r.status_code != 201:
-                logger.warning('Can\'t added tag "{}"', tag)
+                logger.warning('Can\'t add tag "{}"', tag)
 
     def find_tag_by_label(self, label, tags):
         if tags is not None and len(tags) > 0:
             return list(filter(lambda tag: tag["label"] == label, tags))
         return None
 
-    def try_to_update_watching_status(self, servarr_object_info, list_type):
+    def try_to_update_status_tags(self, servarr_object_info, list_type):
         new_tag_label = self.list_type_to_tag_label(list_type)
         if new_tag_label is None:
-            return None
+            return False
+
         found_added_tags = self.find_tag_by_label(new_tag_label, self.tags)
         if found_added_tags is None or len(found_added_tags) == 0:
             return None
@@ -109,9 +109,7 @@ class Servarr:
         if found_added_tag_id in servarr_object_info["tags"]:
             return False
 
-        self.remove_old_tag(servarr_object_info, "unwatched")
-        self.remove_old_tag(servarr_object_info, "watching")
-        self.remove_old_tag(servarr_object_info, "watched")
+        self.remove_old_tags(servarr_object_info)
 
         api = "/api/%s/%s/editor" % (self.api_version, self.api_type)
         data = self.get_apply_tags_data(servarr_object_info, found_added_tag_id)
@@ -131,21 +129,13 @@ class Servarr:
         else:
             return None
 
+    def remove_old_tags(self, servarr_object_info):
+        pass
+
     def get_apply_tags_data(self, servarr_object_info, found_added_tag_id):
-        data = {}
-        data["movieIds"] = []
-        data["movieIds"].append(servarr_object_info["id"])
-        data["tags"] = []
-        data["tags"].append(found_added_tag_id)
-        return data
+        return {}
 
     def list_type_to_tag_label(self, list_type):
-        if list_type == "wish":
-            return "unwatched"
-        if list_type == "do":
-            return "watching"
-        if list_type == "collect":
-            return "watched"
         return None
 
     def remove_old_tag(self, servarr_object_info, old_tag_label):
@@ -190,7 +180,7 @@ class Servarr:
         titles = caller_object_details["titles"]
         added_item = self.find_added_item(caller_object_details)
         if added_item is not None:
-            watching_status_update_result = self.try_to_update_watching_status(
+            watching_status_update_result = self.try_to_update_status_tags(
                 added_item, list_type
             )
             if watching_status_update_result is not None:
@@ -207,6 +197,7 @@ class Servarr:
             logger.info('Trying to add"{}"...', titles)
             self.search_and_add(caller_object_details, list_type)
 
+    # TODO: A query would be cheaper than this O(N) for a large item list
     def find_added_item(self, caller_object_details):
         external_id = caller_object_details["external_id"].strip()
         searching_titles = self.get_searching_titles(caller_object_details)
@@ -239,9 +230,8 @@ class Servarr:
 
     def get_searching_titles(self, caller_object_details):
         searching_titles = caller_object_details["titles"]
-        searching_titles.extend(caller_object_details["aliases"])
-        for idx, searching_title in enumerate(searching_titles):
-            searching_titles[idx] = format_series_title(searching_title)
+        if "aliases" in caller_object_details:
+            searching_titles.extend(caller_object_details["aliases"])
         return searching_titles
 
     def search_item_by_term(self, term):

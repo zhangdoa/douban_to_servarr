@@ -7,7 +7,7 @@ from lxml import etree
 from loguru import logger
 from bs4 import BeautifulSoup
 
-from utils.http_utils import RequestUtils
+from utils.request_utils import RequestUtils
 
 
 class DoubanCrawler:
@@ -45,12 +45,14 @@ class DoubanCrawler:
         return res
 
     def get_user_entry_lists(
-        self, user, list_types, within_days=365, turn_page=True
+        self, user, list_types, start_date, end_date, start_page
     ) -> object:
         entry_lists = {}
         for list_type in list_types:
-            logger.info('Start to scrape list "{}" for "{}"', list_type, user)
-            offset = 0
+            logger.info(
+                'Start to scrape list "{}" for {} on {}.', list_type, user, self.url
+            )
+            offset = (start_page - 1) * 15
             uri = "/people/%s/%s?start=%s&sort=time&rating=all&filter=all&mode=grid" % (
                 user,
                 list_type,
@@ -58,6 +60,7 @@ class DoubanCrawler:
             )
             page_count = 1
             entry_list = []
+            turn_page = True
             while uri is not None:
                 # The next page href is not consistent on different category's pages
                 if self.url in uri:
@@ -75,18 +78,30 @@ class DoubanCrawler:
                     uri = None
                 entry_list_url = html.xpath('//li[@class="title"]/a[1]/@href')
                 added_date_list = html.xpath('//li/span[@class="date"]/text()')
-                entry_list_a = html.xpath('//li[@class="title"]/a/em/text()')
+                entry_list_a = html.xpath('//li[@class="title"]/a/em')
                 for i in range(len(entry_list_a)):
-                    added_date = added_date_list[i]
-                    days = (
-                        datetime.datetime.now()
-                        - datetime.datetime.strptime(added_date, "%Y-%m-%d")
-                    ).days
-                    if within_days is not None and days > within_days:
+                    added_date_str = added_date_list[i]
+                    added_date = datetime.datetime.strptime(
+                        added_date_str, "%Y-%m-%d"
+                    ).date()
+                    if added_date >= start_date:
+                        continue
+                    if added_date <= end_date:
                         turn_page = False
                         continue
                     url = entry_list_url[i]
-                    titles = entry_list_a[i].split(" / ")
+                    titles = entry_list_a[i].text.split(" / ")
+                    if entry_list_a[i].tail is not None:
+                        alternative_titles = entry_list_a[i].tail.strip().split(" / ")
+                        if (
+                            alternative_titles is not None
+                            and len(alternative_titles) > 0
+                        ):
+                            # Remove "/ "
+                            alternative_titles[0] = alternative_titles[0][
+                                2 : len(alternative_titles[0])
+                            ]
+                            titles.extend(alternative_titles)
                     found_ids = re.search(r"/subject/(\d+)", url)
                     if found_ids:
                         id = found_ids.group(1)
@@ -97,7 +112,7 @@ class DoubanCrawler:
                             "id": id.strip(),
                             "titles": titles,
                             "url": url,
-                            "added_date": added_date,
+                            "added_date": added_date_str,
                         }
                     )
                 if not turn_page:
@@ -105,12 +120,12 @@ class DoubanCrawler:
                 if uri is not None:
                     logger.info(
                         "Page {} has been scraped, moving to the next one...",
-                        page_count,
+                        start_page - 1 + page_count,
                     )
                     page_count = page_count + 1
             if len(entry_list) > 0:
                 entry_lists[list_type] = entry_list
-            logger.info("Total scraped entries: {}.", len(entry_list))
+            logger.info("Total scraped entries: {} on {}.", len(entry_list), self.url)
         return entry_lists
 
     def get_details_by_id(self, id):
@@ -158,7 +173,7 @@ class DoubanMovieCrawler(DoubanCrawler):
             "external_id": external_id,
         }
         logger.info(
-            "Scraped: {}",
+            "Scraped: {}.",
             result,
         )
         return result

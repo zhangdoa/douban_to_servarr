@@ -70,10 +70,11 @@ class ListParser:
                     u,
                     category,
                     list_types=self.douban_config["list_types"],
-                    within_days=self.douban_config["within_days"],
-                    turn_page=self.douban_config["turn_page"],
+                    start_date=self.douban_config["start_date"],
+                    end_date=self.douban_config["end_date"],
+                    start_page=self.douban_config["start_page"],
                     mode=self.douban_config["mode"],
-                    save_scraped_list=self.douban_config["save_scraped_list"],
+                    instant_add=self.douban_config["instant_add"],
                     list_file_path=self.douban_config["list_file_path"],
                 )
         logger.info("Finished.")
@@ -83,35 +84,44 @@ class ListParser:
         user_id,
         category,
         list_types,
-        within_days=365,
-        turn_page=True,
+        start_date,
+        end_date,
+        start_page,
         mode="scrape_and_add",
-        save_scraped_list=True,
+        instant_add=True,
         list_file_path="",
     ):
         entry_details_lists = self.get_entry_details_lists(
             user_id,
             category,
             list_types,
-            within_days,
-            turn_page,
+            start_date,
+            end_date,
+            start_page,
             mode,
+            instant_add,
             list_file_path,
         )
-        if entry_details_lists is None:
-            return
 
-        if mode != "scrape_only":
-            self.add_entries(list_types, entry_details_lists)
+        if (
+            entry_details_lists is not None
+            and instant_add == False
+            and mode != "scrape_only"
+        ):
+            for list_type in list_types:
+                for entry_details in entry_details_lists[list_type]:
+                    self.add_entry(entry_details, list_type)
 
     def get_entry_details_lists(
         self,
         user_id,
         category,
         list_types,
-        within_days,
-        turn_page,
+        start_date,
+        end_date,
+        start_page,
         mode,
+        instant_add,
         list_file_path,
     ):
         user_entries_lists = {}
@@ -148,13 +158,15 @@ class ListParser:
             user_entries_lists = crawler.get_user_entry_lists(
                 user_id,
                 list_types=list_types,
-                within_days=within_days,
-                turn_page=turn_page,
+                start_date=start_date,
+                end_date=end_date,
+                start_page=start_page,
             )
             if user_entries_lists is None or len(user_entries_lists) == 0:
                 logger.info(
-                    "There is nothing to add from the list(s) {} of user {}.",
+                    "There is nothing to add from the list(s) {} of category '{}' for user {}.",
                     list_types,
+                    category,
                     user_id,
                 )
                 return None
@@ -163,6 +175,8 @@ class ListParser:
 
         for list_type in list_types:
             entry_details_lists[list_type] = []
+            if list_type not in user_entries_lists:
+                continue
             logger.info('Processing list: "{}"...', list_type)
             for user_entry in user_entries_lists[list_type]:
                 entry_details = crawler.get_details_by_id(user_entry["id"])
@@ -175,6 +189,8 @@ class ListParser:
                     continue
                 entry_details["titles"] = user_entry["titles"]
                 entry_details_lists[list_type].append(entry_details)
+                if instant_add:
+                    self.add_entry(entry_details, list_type)
 
         if len(entry_details_lists) > 0:
             self.save_lists("entry_details", category, entry_details_lists)
@@ -214,11 +230,6 @@ class ListParser:
         with open(file_name, "w", encoding="utf-8") as list_file:
             json_obj = json.dumps(lists, indent=4, sort_keys=True)
             list_file.write(json_obj)
-
-    def add_entries(self, list_types, entry_details_lists):
-        for list_type in list_types:
-            for entry_details in entry_details_lists[list_type]:
-                self.add_entry(entry_details, list_type)
 
     def add_entry(self, entry_details, list_type):
         type = entry_details["type"]

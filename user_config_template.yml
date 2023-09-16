@@ -6,24 +6,26 @@ douban:
   # You could log in to your account at https://movie.douban.com and use the browser's developer tool to check the cookies (Chrome: F12 - Network).
   # When the panel is enabled and after you reload the page once more, there should be a resource named "movie.douban.com", and you can find the cookies in Headers - Requested Headers.
   cookies: ''
-  #是否自动翻页，豆瓣的电影页面是分页的方式，开启此配置将自动点击下一页读取更多电影信息，推荐开启；
-  turn_page: true
+  # The categories should be the same as the subdomains of douban.com. E.g., "movie" in https://movie.douban.com/people/user1/wish.
   categories: music;movie
-  #wish为想看、do为在看、collect为看过，多个支持;号隔开 示范：wish;do
-  list_types: wish;collect
-  #这个就是豆瓣ID https://movie.douban.com/people/user1/wish PC端，这个访问地址中的user1 就是你的豆瓣ID，豆瓣手机客户端，也可以在账户管理页面看到，支持监听多个用户，;号隔开
+  # The user domain should be the same as the user subfolder of the "people" subfolder on douban.com. E.g., "user1" in https://movie.douban.com/people/user1/wish.
   user_domain: user1;user2;user3
-  #你加入想看的电影一定是有添加时间的，这个就是取多少天内的电影；如果你曾经在想看点了很多不想看的电影，用这个配置，一定程度上可以过滤掉无效被你遗忘的信息；
-  within_days: 0
-   # YYYY-MM-DD, or 'today'
-  from_date: 'today'
-  # YYYY-MM-DD, or 'epoch' from 1970-01-01
-  to_date: 2012-01-01
-  save_scraped_list: true
-  # scrape_only, add_from_file, scrape_and_add
-  mode: 'scrape_and_add' 
-  # It could be either the scraped user entry list '19700101_010101_user_entries_music_collect.list' or the further scraped entry details list 19700101_010101_entry_details_movie_wish.list
-  # It would be used only if add_from_file is set to true
+  # The list types should be the same as the list type subfolder of the user subfolder on douban.com. E.g., "wish" in https://movie.douban.com/people/user1/wish.
+  list_types: wish;collect;do
+  # Specify the start scraping date. In the format of YYYY-MM-DD or 'today' to start from today.
+  start_date: 'today'
+  # Specify how many days of data it should scrape. Set it to 0 if you would want to use the end_date instead.
+  max_scraping_days: 0
+  # Specify the end scraping date. In the format of YYYY-MM-DD or 'epoch' to set it to 1970-01-01.
+  end_date: 2012-01-01
+  # The start scraping page. It could be useful to skip days that are not in the scraping range specified above.
+  start_page: 1
+  # If the scraper should add the entries as soon as the data is scraped. Setting this to false would run the adding step after the entire in-range entries are scraped.
+  instant_add: true
+  # Set this to 'scrape_only', 'add_from_file' or 'scrape_and_add' to suit your needs.
+  mode: 'scrape_and_add'
+  # It could be either the scraped user entry list '19700101_010101_user_entries_music_collect.list' or the further scraped entry details list '19700101_010101_entry_details_movie_wish.list'.
+  # It would be used only if the mode is 'add_from_file'.
   list_file_path: '19700101_010101_entry_details_movie_wish.list'
 # See https://wiki.servarr.com/docker-guide for the best setup recommendation
 # See https://wiki.servarr.com/en/radarr for the details

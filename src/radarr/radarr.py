@@ -35,6 +35,33 @@ class Radarr(Servarr):
         )
         self.minimumAvailability = minimumAvailability
 
+    def try_to_create_tags(self):
+        self.try_to_create_tag("unwatched")
+        self.try_to_create_tag("watching")
+        self.try_to_create_tag("watched")
+
+    def remove_old_tags(self, servarr_object_info):
+        self.remove_old_tag(servarr_object_info, "unwatched")
+        self.remove_old_tag(servarr_object_info, "watching")
+        self.remove_old_tag(servarr_object_info, "watched")
+
+    def list_type_to_tag_label(self, list_type):
+        if list_type == "wish":
+            return "unwatched"
+        if list_type == "do":
+            return "watching"
+        if list_type == "collect":
+            return "watched"
+        return None
+
+    def get_apply_tags_data(self, servarr_object_info, found_added_tag_id):
+        data = {}
+        data["movieIds"] = []
+        data["movieIds"].append(servarr_object_info["id"])
+        data["tags"] = []
+        data["tags"].append(found_added_tag_id)
+        return data
+
     def is_any_matching(self, external_id, searching_titles, item):
         is_external_id_matching = "imdbId" in item and item["imdbId"] == external_id
         is_title_matching = "title" in item and item["title"] in searching_titles

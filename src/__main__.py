@@ -22,17 +22,16 @@ def load_user_config(workdir):
 
 
 def create_bot(user_config, workdir):
-    within_days = 0
-    if user_config["douban"].get("within_days"):
-        within_days = user_config["douban"]["within_days"]
-    if within_days == 0:
-        from_date = user_config["douban"]["from_date"]
-        to_date = user_config["douban"]["to_date"]
-        if from_date == "today":
-            from_date = datetime.date.today()
-        if to_date == "epoch":
-            to_date = datetime.date(1970, 1, 1)
-        within_days = (from_date - to_date).days
+    max_scraping_days = user_config["douban"]["max_scraping_days"]
+    start_date = user_config["douban"]["start_date"]
+    if start_date == "today":
+        start_date = datetime.date.today()
+    end_date = user_config["douban"]["end_date"]
+    if max_scraping_days == 0:
+        if end_date == "epoch":
+            end_date = datetime.date(1970, 1, 1)
+    else:
+        end_date = start_date - max_scraping_days
 
     list_file_path = ""
     mode = user_config["douban"]["mode"]
@@ -49,11 +48,12 @@ def create_bot(user_config, workdir):
         "douban": {
             "cookies": user_config["douban"]["cookies"],
             "user_domain": user_config["douban"]["user_domain"].split(";"),
-            "within_days": within_days,
-            "turn_page": user_config["douban"]["turn_page"],
+            "start_date": start_date,
+            "end_date": end_date,
+            "start_page": user_config["douban"]["start_page"],
             "categories": user_config["douban"]["categories"].split(";"),
             "list_types": user_config["douban"]["list_types"].split(";"),
-            "save_scraped_list": user_config["douban"]["save_scraped_list"],
+            "instant_add": user_config["douban"]["instant_add"],
             "mode": user_config["douban"]["mode"],
             "list_file_path": list_file_path,
         },
