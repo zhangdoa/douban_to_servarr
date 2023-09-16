@@ -100,12 +100,11 @@ def create_bot(user_config, workdir):
 
 
 if __name__ == "__main__":
-    # 运行在docker上的时候，workdir = '/data',记得修改, 本地运行 workdir = os.getcwd()
-    workdir = os.getcwd()
-    if not os.path.exists(workdir):
-        logger.error("请提供正确的配置，工作目录不存在：{}", workdir)
+    cwd = os.getcwd()
+    if not os.path.exists(cwd):
+        logger.error("The current working directory is invalid：{}.", cwd)
         sys.exit()
-    user_config = load_user_config(workdir)
+    user_config = load_user_config(cwd)
     if user_config:
         logger.add(
             sys.stdout,
@@ -115,10 +114,10 @@ if __name__ == "__main__":
         )
         logger.add("movie_robot_{time}.log")
 
-        movie_bot = create_bot(user_config, workdir)
+        movie_bot = create_bot(user_config, cwd)
         if movie_bot:
             movie_bot.start()
         else:
             logger.error(
-                "Something isn't correct, please check the console output for the details"
+                "Something isn't correct, please check the console output for the details."
             )
