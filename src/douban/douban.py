@@ -50,7 +50,12 @@ class DoubanCrawler:
         entry_lists = {}
         for list_type in list_types:
             logger.info(
-                'Start to scrape list "{}" for {} on {}.', list_type, user, self.url
+                'Start to scrape list "{}" for {} on {}, from {} to {}.',
+                list_type,
+                user,
+                self.url,
+                start_date,
+                end_date,
             )
             offset = (start_page - 1) * 15
             uri = "/people/%s/%s?start=%s&sort=time&rating=all&filter=all&mode=grid" % (
@@ -84,9 +89,9 @@ class DoubanCrawler:
                     added_date = datetime.datetime.strptime(
                         added_date_str, "%Y-%m-%d"
                     ).date()
-                    if added_date >= start_date:
+                    if added_date > start_date:
                         continue
-                    if added_date <= end_date:
+                    if added_date < end_date:
                         turn_page = False
                         continue
                     url = entry_list_url[i]
