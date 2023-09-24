@@ -82,3 +82,4 @@ lidarr:
   monitored: false
   addOptions: {addType: "automatic", searchForNewAlbum: true}
   qualityProfileId: 1
+  metadataProfileId: 1

@@ -1,4 +1,4 @@
-FROM python:3.8.12-slim
+FROM python:3.10.6-slim
 LABEL title="Douban to Servarr"
 LABEL description="An automated scraper tool to send entries from your Douban lists to Servarr servers."
 LABEL authors="zhangdoa"
@@ -11,7 +11,10 @@ WORKDIR /app
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
+    && apt-get install -y gcc \
+    && apt-get install zlib1g-dev -y \
     && apt-get install -y tzdata \
+    && apt-get install libxml2-dev libxslt-dev python-dev -y \
     && apt-get install -y cron \
     && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime \
     && echo ${TZ} > /etc/timezone \

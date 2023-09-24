@@ -94,6 +94,7 @@ def create_bot(user_config, workdir):
             "monitored": user_config["lidarr"]["monitored"],
             "addOptions": user_config["lidarr"]["addOptions"],
             "qualityProfileId": user_config["lidarr"]["qualityProfileId"],
+            "metadataProfileId": user_config["lidarr"]["metadataProfileId"],
         },
     }
     return ListParser(**params)

@@ -4,4 +4,4 @@ requests==2.26.0
 urllib3==1.26.7
 cn2an==0.5.16
 loguru==0.7.1
-PyYAML==6.0
+PyYAML==6.0.1

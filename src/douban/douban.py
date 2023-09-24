@@ -23,9 +23,10 @@ class DoubanCrawler:
 
         # Initialize the session
         initial_headers = self.headers
-        initial_headers["Cookies"] = cookies
+        if cookies != "":
+            initial_headers["Cookies"] = cookies
         res = self.request_get(self.url, headers=initial_headers)
-        if res.status_code != 200:
+        if res is None or res.status_code != 200:
             logger.error("Failed to create a crawler for category {}.", self.category)
 
     def atoi(self, str):

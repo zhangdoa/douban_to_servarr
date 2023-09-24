@@ -52,6 +52,7 @@ class ListParser:
             monitored=kwargs["lidarr"]["monitored"],
             addOptions=kwargs["lidarr"]["addOptions"],
             qualityProfileId=kwargs["lidarr"]["qualityProfileId"],
+            metadataProfileId=kwargs["lidarr"]["metadataProfileId"],
         )
 
     def start(self):

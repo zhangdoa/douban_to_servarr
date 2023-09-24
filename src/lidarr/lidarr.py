@@ -19,6 +19,7 @@ class Lidarr(Servarr):
         monitored=True,
         addOptions={},
         qualityProfileId=1,
+        metadataProfileId=1,
     ):
         Servarr.__init__(
             self,
@@ -34,6 +35,8 @@ class Lidarr(Servarr):
             addOptions,
             qualityProfileId,
         )
+
+        self.metadataProfileId = metadataProfileId
 
     def is_any_matching(self, external_id, searching_titles, item):
         title_lowercase = item["title"].lower()
@@ -106,6 +109,7 @@ class Lidarr(Servarr):
         params["profileId"] = self.qualityProfileId
         params["monitored"] = self.monitored
         params["artist"]["qualityProfileId"] = self.qualityProfileId
+        params["artist"]["metadataProfileId"] = self.metadataProfileId
         params["artist"]["rootFolderPath"] = self.rootFolderPath
         params["artist"]["monitored"] = self.monitored
         params["addOptions"] = self.addOptions
