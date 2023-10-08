@@ -130,6 +130,13 @@ class ListParser:
         entry_details_lists = {}
 
         if mode == "add_from_file":
+            if category not in list_file_path:
+                logger.info(
+                    "The user entries list {} is not for category {}, skipping to the next category.",
+                    list_file_path,
+                    category,
+                )
+                return None
             user_entries_lists, entry_details_lists = self.load_lists(list_file_path)
             if len(entry_details_lists) > 0:
                 return entry_details_lists

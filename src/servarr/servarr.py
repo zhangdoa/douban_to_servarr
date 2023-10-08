@@ -122,7 +122,7 @@ class Servarr:
         if r.status_code == 202:
             logger.info(
                 'Successfully updated the status tag of {} to "{}".',
-                servarr_object_info["titles"],
+                servarr_object_info["title"],
                 found_added_tags[0]["label"],
             )
             return True
@@ -159,7 +159,7 @@ class Servarr:
             logger.info(
                 'Successfully removed the tag "{}" of {}.',
                 old_tag_label,
-                servarr_object_info["titles"],
+                servarr_object_info["title"],
             )
             return True
         else:

@@ -1,6 +1,7 @@
 import os
 import sys
 import datetime
+from zoneinfo import ZoneInfo
 import yaml
 from loguru import logger
 from list_parser import ListParser
@@ -25,7 +26,8 @@ def create_bot(user_config, workdir):
     max_scraping_days = user_config["douban"]["max_scraping_days"]
     start_date = user_config["douban"]["start_date"]
     if start_date == "today":
-        start_date = datetime.date.today()
+        # Douban uses CST
+        start_date = datetime.datetime.now(ZoneInfo("Asia/Shanghai")).date()
     end_date = user_config["douban"]["end_date"]
     if max_scraping_days == 0:
         if end_date == "epoch":
