@@ -15,7 +15,7 @@ An automated scraper tool to send entries from your [Douban](https://www.douban.
 - Open the workspace folder and launch with your launching option.
 
 ### In Docker
-1. Build the Docker image by `docker build -t douban_to_servarr . -f Dockerfile --platform linux/amd64`.
+1. Build the Docker image by `docker build -t douban_to_servarr . -f Dockerfile --platform linux/amd64` (the platform parameter should be a suitable one for your target platform).
 2. Start the container with either docker-compose (recommended):
    ```
     version: "2.1"
