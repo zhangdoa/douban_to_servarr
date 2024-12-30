@@ -156,4 +156,4 @@ cython_debug/
 *.log
 *.list
 *.yml
-!user_config_template.yml
+!config_template.yml

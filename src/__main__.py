@@ -6,20 +6,41 @@ import yaml
 from loguru import logger
 from list_parser import ListParser
 
-user_setting_name = "user_config.yml"
+
+def is_running_in_docker():
+    try:
+        with open("/proc/1/cgroup", "r") as f:
+            if "docker" in f.read():
+                return True
+    except FileNotFoundError:
+        return False
+    return False
 
 
-def load_user_config(workdir):
-    user_config_file_path = workdir + os.sep + user_setting_name
-    if not os.path.exists(user_config_file_path):
-        logger.warning(
-            "File user_config.xml doesn't exist at {}. Please create one from user_config_template.xml.",
-            user_config_file_path,
+def load_user_config():
+    if is_running_in_docker():
+        config_file = "/app/config.yml"
+    else:
+        config_file = os.path.join(os.getcwd(), "config.yml")
+
+    if not os.path.exists(config_file):
+        logger.error(
+            "Configuration file '{}' does not exist. Please ensure it is present at the expected path.",
+            config_file,
         )
         return None
-    with open(user_config_file_path, "r", encoding="utf-8") as file:
-        user_config = yaml.safe_load(file)
-    return user_config
+
+    try:
+        with open(config_file, "r", encoding="utf-8") as file:
+            user_config = yaml.safe_load(file)
+        logger.info("Successfully loaded configuration from '{}'.", config_file)
+        return user_config
+    except yaml.YAMLError as e:
+        logger.error("Failed to parse YAML file '{}': {}", config_file, e)
+    except Exception as e:
+        logger.error("Unexpected error loading '{}': {}", config_file, e)
+
+    return None
 
 
 def create_bot(user_config, workdir):
@@ -103,29 +124,41 @@ def create_bot(user_config, workdir):
 
 
 if __name__ == "__main__":
-    cwd = os.getcwd()
-    if not os.path.exists(cwd):
-        logger.error("The current working directory is invalid：{}.", cwd)
+    user_config = load_user_config()
+    if user_config is None:
         sys.exit()
-    user_config = load_user_config(cwd)
-    if user_config:
-        logger.add(
-            sys.stdout,
-            format="{time} {level} {message}",
-            filter="my_module",
-            level=user_config["global"]["log_level"],
+
+    logger.add(
+        sys.stdout,
+        format="{time} {level} {message}",
+        filter="my_module",
+        level=user_config["global"]["log_level"],
+    )
+
+    # Hardcoded or default log directory
+    log_dir_path = os.path.abspath("./logs")
+
+    try:
+        # Create the log directory if it doesn't exist
+        os.makedirs(log_dir_path, exist_ok=True)
+        logger.info("Log directory set to: {}", log_dir_path)
+    except PermissionError as e:
+        logger.error(
+            "Permission denied when creating log directory '{}': {}", log_dir_path, e
         )
-        log_dir_name = "logs"
-        log_dir_path = cwd + os.sep + log_dir_name
-        if not os.path.exists(log_dir_path):
-            os.makedirs(log_dir_path)
+        raise
+    except Exception as e:
+        logger.error("Failed to create log directory '{}': {}", log_dir_path, e)
+        raise
 
-        logger.add("%s%s{time}.log" % (log_dir_name, os.sep))
+    # Add file logging
+    logger.add(f"{log_dir_path}{os.sep}{{time}}.log")
 
-        bot = create_bot(user_config, cwd)
-        if bot:
-            bot.start()
-        else:
-            logger.error(
-                "Something isn't correct, please check the console output for the details."
-            )
+    # Create and start the bot
+    bot = create_bot(user_config, os.getcwd())
+    if bot:
+        bot.start()
+    else:
+        logger.error(
+            "Something isn't correct, please check the console output for the details."
+        )

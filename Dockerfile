@@ -1,30 +1,36 @@
+# Use a slim Python base image
 FROM python:3.10.6-slim
+
+# Metadata
 LABEL title="Douban to Servarr"
 LABEL description="An automated scraper tool to send entries from your Douban lists to Servarr servers."
 LABEL authors="zhangdoa"
 
-ENV DOWNLOAD_CRON='0 2,10,12,14,16,18,20,22 * * *'  
+# Environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
+
+# Working directory
+WORKDIR /app
+
+# Copy application code and requirements
 COPY src /app/src
 COPY requirements.txt /app
-COPY user_config.yml /app
-WORKDIR /app
-ENV DEBIAN_FRONTEND=noninteractive
 
+# Install dependencies
 RUN apt-get update \
-    && apt-get install -y gcc \
-    && apt-get install zlib1g-dev -y \
-    && apt-get install -y tzdata \
-    && apt-get install libxml2-dev libxslt-dev python-dev -y \
-    && apt-get install -y cron \
+    && apt-get install -y --no-install-recommends \
+        gcc \
+        zlib1g-dev \
+        tzdata \
+        libxml2-dev \
+        libxslt-dev \
+        python3-dev \
+        cron \
     && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime \
     && echo ${TZ} > /etc/timezone \
     && dpkg-reconfigure --frontend noninteractive tzdata \
-    && rm -rf /var/lib/apt/lists/* \
-    && python -m pip install --upgrade pip \
-    && pip install -r requirements.txt
-
-RUN echo "$DOWNLOAD_CRON cd /app && /usr/local/bin/python /app/src/__main__.py >> /var/log/cron.log 2>&1" > /etc/cron.d/download-cron
-RUN chmod +x /etc/cron.d/download-cron
-RUN crontab /etc/cron.d/download-cron
-RUN touch /var/log/cron.log
-CMD cron && tail -f /var/log/cron.log
+    && python -m pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*

@@ -10,6 +10,10 @@
             "request": "launch",
             "program": "src/__main__.py",
             "console": "integratedTerminal",
+            "env": {
+                "CONFIG_FILE": "${workspaceFolder}/user_config.yml",
+                "LOG_DIR": "${workspaceFolder}/logs",
+            },
             "justMyCode": true
         }
     ]
