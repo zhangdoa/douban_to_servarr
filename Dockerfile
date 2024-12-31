@@ -17,6 +17,10 @@ WORKDIR /app
 COPY src /app/src
 COPY requirements.txt /app
 
+# Copy entrypoint script
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
 # Install dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -34,3 +38,10 @@ RUN apt-get update \
     && pip install --no-cache-dir -r requirements.txt \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Ensure log file exists
+RUN touch /var/log/cron.log
+
+# Use entrypoint for runtime configuration
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["cron", "-f"]
