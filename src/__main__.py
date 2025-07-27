@@ -70,7 +70,7 @@ def create_bot(user_config, workdir):
         "workdir": workdir,
         "douban": {
             "cookies": user_config["douban"]["cookies"],
-            "user_domain": user_config["douban"]["user_domain"].split(";"),
+            "user_domain": str(user_config["douban"]["user_domain"]).split(";"),
             "start_date": start_date,
             "end_date": end_date,
             "start_page": user_config["douban"]["start_page"],
